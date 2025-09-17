@@ -32,8 +32,13 @@ export async function load() {
         };
     }
 
+    const { data: players, error: playersError } = await supabase
+        .from("players")
+        .select("*");
+
     return {
         matches: playerMatches,
         error: null,
+        players: players,
     };
 }

@@ -1,6 +1,6 @@
 import { supabase } from "$lib/supabaseClient";
 
-export async function load({ locals }) {
+export async function load({ locals }: { locals: { user?: any } }) {
   let isAuthenticated = false;
   if (locals && locals.user) {
     isAuthenticated = true;
