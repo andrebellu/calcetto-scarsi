@@ -1,30 +1,17 @@
 <script>
-  import { Avatar } from "@skeletonlabs/skeleton-svelte/composed";
-
   export let name;
   export let goals;
   export let wins;
   export let matchesPlayed;
   export let winRate;
   export let golPerMatch;
-  export let temp = false;
 
   let initials = "";
 </script>
 
 <div
   class="card shadow-lg bg-surface-100-900/60 backdrop-blur-md border border-white/30 grid grid-cols-[auto_1fr] items-center gap-8 p-8 text-lg"
-  class:border-dashed={temp}
-  class:border-6={temp}
-  class:opacity-60={temp}
-  class:border-gray-400={temp}
 >
-  <Avatar>
-    <Avatar.Image
-      src="https://avatar.iran.liara.run/username?username={name}"
-    />
-    <Avatar.Fallback>{initials}</Avatar.Fallback>
-  </Avatar>
   <div>
     <p class="font-bold mb-2">{name}</p>
     <div

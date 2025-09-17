@@ -1,15 +1,19 @@
 import { supabase } from "$lib/supabaseClient";
 
-export async function load() {
+export async function load({ locals }) {
+  let isAuthenticated = false;
+  if (locals && locals.user) {
+    isAuthenticated = true;
+  }
+
   const { count: playersCount, error: playersError } = await supabase
     .from("players")
-    .select('*', { count: 'exact', head: true });
+    .select("*", { count: "exact", head: true });
 
-const { count: tempPlayersCount, error: tempPlayersError } = await supabase
-  .from("players")
-  .select('*', { count: 'exact', head: true })
-  .eq('is_temporary', true);
-
+  const { count: tempPlayersCount, error: tempPlayersError } = await supabase
+    .from("players")
+    .select("*", { count: "exact", head: true })
+    .eq("is_temporary", true);
 
   const { data: matches, error: matchesError } = await supabase
     .from("matches")
@@ -29,5 +33,6 @@ const { count: tempPlayersCount, error: tempPlayersError } = await supabase
     tempPlayersCount: tempPlayersCount ?? 0,
     totalMatches: matches ? matches.length : 0,
     error: playersError || matchesError,
+    isAuthenticated,
   };
 }
