@@ -2,15 +2,15 @@
 
 @import "@skeletonlabs/skeleton";
 @import "@skeletonlabs/skeleton/optional/presets";
-@import "@skeletonlabs/skeleton/themes/rocket";
+@import "@skeletonlabs/skeleton/themes/legacy";
 
 @source '../node_modules/@skeletonlabs/skeleton-svelte/dist';
 
 @layer base {
-  body {
-    @apply h-screen w-screen p-0 m-0;
-    .material-symbols-outlined {
-      font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 48;
+    body {
+        @apply h-screen w-screen p-0 m-0;
+        .material-symbols-outlined {
+            font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 48;
+        }
     }
-  }
 }
