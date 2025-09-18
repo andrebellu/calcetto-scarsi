@@ -1,6 +1,6 @@
 import { supabase } from "$lib/supabaseClient";
 
-export async function load({ locals }) {
+export async function load({ locals }: { locals: any }) {
   const { data: players, error: playersError } = await supabase
     .from("players")
     .select("*");

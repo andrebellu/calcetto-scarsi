@@ -19,6 +19,7 @@
 		"@sveltejs/vite-plugin-svelte": "^6.0.0",
 		"bits-ui": "^2.8.6",
 		"clsx": "^2.1.1",
+		"layerchart": "next",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
 		"svelte-dnd-action": "^0.9.65",
