@@ -5,6 +5,7 @@
   import { onMount } from "svelte";
   import "../app.css";
   import { page } from "$app/stores";
+  import { asset } from "$app/paths";
 
   let { data, children } = $props();
   let { session, supabase } = $derived(data);
@@ -23,7 +24,7 @@
 {#if $page.url.pathname == "/"}
   <div class="fixed inset-0 -z-10 w-screen h-screen">
     <img
-      src="src/lib/assets/fieldAI.png"
+      src={asset("/imgs/fieldAI.png")}
       alt="Wallpaper"
       class="top-0 left-0 w-screen h-screen opacity-70 aspect-square object-cover"
       draggable="false"
