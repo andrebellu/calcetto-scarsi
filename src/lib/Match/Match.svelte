@@ -76,14 +76,14 @@
 </script>
 
 <div
-  class="rounded-3xl shadow-xl border border-white/30 bg-white/20 backdrop-blur-lg p-6 max-w-7xl mx-auto"
+  class="rounded-3xl shadow-xl bg-accent/20 backdrop-blur-lg p-6 max-w-7xl mx-auto"
 >
   <div
     class="flex flex-col md:flex-row md:justify-between md:items-center mb-4"
   >
     <div>
       <div class="text-sm text-gray-500">Partita #{match.match_id}</div>
-      <div class="text-lg font-semibold text-gray-900">{match.luogo}</div>
+      <div class="text-lg font-semibold">{match.luogo}</div>
       <div class="text-xs text-gray-400">{match.match_date}</div>
     </div>
     <div class="flex items-center gap-2 mt-4 md:mt-0 justify-center">
@@ -113,15 +113,13 @@
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
     <!-- Squadra Blu -->
-    <div
-      class="bg-gradient-to-tr from-blue-100/60 via-blue-200/60 to-blue-50/80 rounded-2xl p-4"
-    >
+    <div class="rounded-2xl p-4 bg-accent/50 border border-blue-300">
       <div class="flex flex-row items-center text-center">
-        <h2 class="text-blue-700 font-bold flex items-center gap-2 text-2xl">
+        <h2 class="text-blue-300 font-bold flex items-center gap-2 text-2xl">
           Squadra Blu
           {#if bluWinners}
             <span
-              class="ml-2 bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-semibold shadow"
+              class="ml-2 bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs font-semibold shadow"
             >
               Vincitori
             </span>
@@ -131,7 +129,7 @@
       <ul class="divide-y divide-blue-200">
         {#each getTeamPlayers(match.player_match, "blu") as player}
           <li class="py-2 flex items-center justify-between">
-            <span class="font-medium text-blue-700 flex items-center gap-1.5">
+            <span class="font-medium text-blue-300 flex items-center gap-1.5">
               {player.players.name}
             </span>
             <span class="flex items-center gap-2">
@@ -154,16 +152,14 @@
     </div>
 
     <!-- Squadra Rossi -->
-    <div
-      class="bg-gradient-to-tr from-red-100/70 via-red-300/60 to-red-50/80 rounded-2xl p-4"
-    >
+    <div class="rounded-2xl p-4 bg-accent/50 border border-red-400">
       <div class="flex flex-row items-center text-center">
-        <h2 class="text-red-700 font-bold flex items-center gap-2 text-2xl">
+        <h2 class="text-red-400 font-bold flex items-center gap-2 text-2xl">
           Squadra Rossi
         </h2>
         {#if rossiWinners}
           <span
-            class="ml-2 bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-semibold shadow"
+            class="ml-2 bg-red-100 text-red-500 px-3 py-1 rounded text-xs font-semibold shadow"
           >
             Vincitori
           </span>
@@ -172,7 +168,7 @@
       <ul class="divide-y divide-red-200">
         {#each getTeamPlayers(match.player_match, "rossi") as player}
           <li class="py-2 flex items-center justify-between">
-            <span class="font-medium text-red-700 flex items-center gap-1.5">
+            <span class="font-medium text-red-400 flex items-center gap-1.5">
               {player.players.name}
             </span>
             <span class="flex items-center gap-2">
