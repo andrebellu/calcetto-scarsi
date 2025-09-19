@@ -182,7 +182,6 @@
     let selectedTab = $state("goals");
 
     let activeSeries = $state<Set<string>>(new Set());
-
     $effect(() => {
         const keys = Object.keys(lineChartConfig ?? {});
         activeSeries = new Set(keys);
@@ -213,17 +212,18 @@
 
     function toggleAllSeries() {
         const keys = Object.keys(lineChartConfig ?? {});
-        if (activeSeries.size === keys.length) {
-            activeSeries = new Set();
-        } else {
-            activeSeries = new Set(keys);
-        }
+        if (activeSeries.size === keys.length) activeSeries = new Set();
+        else activeSeries = new Set(keys);
     }
 
+    let isMobile = $state(false);
     onMount(() => {
         if (typeof window === "undefined") return;
         const saved = localStorage.getItem("stats:showTemporary");
         if (saved != null) showTemporary = saved === "1";
+        const check = () => (isMobile = window.innerWidth < 640);
+        check();
+        window.addEventListener("resize", check, { passive: true });
     });
 
     $effect(() => {
@@ -232,42 +232,61 @@
     });
 </script>
 
-<div class="max-w-3xl mx-auto py-8">
+<div class="mx-auto w-full max-w-7xl px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
     <Navbar />
-    <h1 class="text-3xl font-bold mb-6 text-primary-500">Statistiche</h1>
-    <div class="flex gap-4 mb-6">
+
+    <h1
+        class="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-primary-500"
+    >
+        Statistiche
+    </h1>
+
+    <div
+        class="flex gap-2 sm:gap-4 mb-4 sm:mb-6 overflow-x-auto no-scrollbar py-1"
+    >
         <button
-            class="px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
+            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
             class:bg-primary={selectedTab === "goals"}
             class:text-white={selectedTab === "goals"}
             class:scale-105={selectedTab === "goals"}
-            onclick={() => (selectedTab = "goals")}>Classifica Gol</button
+            onclick={() => (selectedTab = "goals")}
         >
+            Classifica Gol
+        </button>
+
         <button
-            class="px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
+            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
             class:bg-primary={selectedTab === "presenze"}
             class:text-white={selectedTab === "presenze"}
             class:scale-105={selectedTab === "presenze"}
             onclick={() => (selectedTab = "presenze")}
-            >Classifica Presenze</button
         >
+            Classifica Presenze
+        </button>
+
         <button
-            class="px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
+            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
             class:bg-primary={selectedTab === "winrate"}
             class:text-white={selectedTab === "winrate"}
             class:scale-105={selectedTab === "winrate"}
-            onclick={() => (selectedTab = "winrate")}>Classifica Winrate</button
+            onclick={() => (selectedTab = "winrate")}
         >
+            Classifica Winrate
+        </button>
+
         <button
-            class="px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
+            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
             class:bg-primary={selectedTab === "graphs"}
             class:text-white={selectedTab === "graphs"}
             class:scale-105={selectedTab === "graphs"}
-            onclick={() => (selectedTab = "graphs")}>Grafici Giocatore</button
+            onclick={() => (selectedTab = "graphs")}
         >
+            Grafici Giocatore
+        </button>
+
         <button
             type="button"
-            class="px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
+            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
             class:bg-primary={showTemporary}
             class:text-white={showTemporary}
             onclick={() => (showTemporary = !showTemporary)}
@@ -287,17 +306,24 @@
 
             <Card.Content class="p-0 overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                    <table class="w-full text-left text-xs sm:text-sm">
                         <thead
                             class="sticky top-0 bg-background/90 backdrop-blur z-10"
                         >
                             <tr class="text-muted-foreground">
-                                <th class="px-4 py-3 w-16">Pos</th>
-                                <th class="px-4 py-3">Giocatore</th>
-                                <th class="px-4 py-3 text-right w-28">Gol</th>
+                                <th
+                                    class="px-2 sm:px-4 py-2 sm:py-3 w-12 sm:w-16"
+                                    >Pos</th
+                                >
+                                <th class="px-2 sm:px-4 py-2 sm:py-3"
+                                    >Giocatore</th
+                                >
+                                <th
+                                    class="px-2 sm:px-4 py-2 sm:py-3 text-right w-20 sm:w-28"
+                                    >Gol</th
+                                >
                             </tr>
                         </thead>
-
                         <tbody>
                             {#each [...filteredPlayers].sort((a, b) => b.goals - a.goals) as player, i}
                                 {@const goals = Number(player.goals) || 0}
@@ -308,20 +334,15 @@
                                 <tr
                                     class="group odd:bg-muted/30 even:bg-background hover:bg-accent/40 transition-colors"
                                 >
-                                    <td class="px-4 py-3 font-medium">
-                                        {#if i === 0}
-                                            🥇
-                                        {/if}
-                                        {#if i === 1}
-                                            🥈
-                                        {/if}
-                                        {#if i === 2}
-                                            🥉
-                                        {/if}
+                                    <td
+                                        class="px-2 sm:px-4 py-2 sm:py-3 font-medium"
+                                    >
+                                        {#if i === 0}🥇{/if}
+                                        {#if i === 1}🥈{/if}
+                                        {#if i === 2}🥉{/if}
                                         {#if i > 2}{i + 1}{/if}
                                     </td>
-
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 sm:px-4 py-2 sm:py-3">
                                         <div class="flex items-center gap-3">
                                             <span
                                                 class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs"
@@ -333,7 +354,7 @@
                                                     {player.name}
                                                 </div>
                                                 <div
-                                                    class="mt-1 h-1.5 w-44 rounded bg-muted"
+                                                    class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted"
                                                 >
                                                     <div
                                                         class="h-1.5 rounded bg-primary transition-all"
@@ -343,12 +364,10 @@
                                             </div>
                                         </div>
                                     </td>
-
                                     <td
-                                        class="px-4 py-3 text-right tabular-nums"
+                                        class="px-2 sm:px-4 py-2 sm:py-3 text-right tabular-nums"
+                                        >{goals}</td
                                     >
-                                        {goals}
-                                    </td>
                                 </tr>
                             {/each}
                         </tbody>
@@ -369,19 +388,24 @@
 
             <Card.Content class="p-0 overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                    <table class="w-full text-left text-xs sm:text-sm">
                         <thead
                             class="sticky top-0 bg-background/90 backdrop-blur z-10"
                         >
                             <tr class="text-muted-foreground">
-                                <th class="px-4 py-3 w-16">Pos</th>
-                                <th class="px-4 py-3">Giocatore</th>
-                                <th class="px-4 py-3 text-right w-32"
+                                <th
+                                    class="px-2 sm:px-4 py-2 sm:py-3 w-12 sm:w-16"
+                                    >Pos</th
+                                >
+                                <th class="px-2 sm:px-4 py-2 sm:py-3"
+                                    >Giocatore</th
+                                >
+                                <th
+                                    class="px-2 sm:px-4 py-2 sm:py-3 text-right w-24 sm:w-32"
                                     >Presenze</th
                                 >
                             </tr>
                         </thead>
-
                         <tbody>
                             {#each [...filteredPlayers].sort((a, b) => b.matchesPlayed - a.matchesPlayed) as player, i}
                                 {@const pres =
@@ -393,20 +417,15 @@
                                 <tr
                                     class="group odd:bg-muted/30 even:bg-background hover:bg-accent/40 transition-colors"
                                 >
-                                    <td class="px-4 py-3 font-medium">
-                                        {#if i === 0}
-                                            🥇
-                                        {/if}
-                                        {#if i === 1}
-                                            🥈
-                                        {/if}
-                                        {#if i === 2}
-                                            🥉
-                                        {/if}
+                                    <td
+                                        class="px-2 sm:px-4 py-2 sm:py-3 font-medium"
+                                    >
+                                        {#if i === 0}🥇{/if}
+                                        {#if i === 1}🥈{/if}
+                                        {#if i === 2}🥉{/if}
                                         {#if i > 2}{i + 1}{/if}
                                     </td>
-
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 sm:px-4 py-2 sm:py-3">
                                         <div class="flex items-center gap-3">
                                             <span
                                                 class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs"
@@ -418,7 +437,7 @@
                                                     {player.name}
                                                 </div>
                                                 <div
-                                                    class="mt-1 h-1.5 w-44 rounded bg-muted"
+                                                    class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted"
                                                 >
                                                     <div
                                                         class="h-1.5 rounded bg-primary/70 transition-all"
@@ -428,9 +447,8 @@
                                             </div>
                                         </div>
                                     </td>
-
                                     <td
-                                        class="px-4 py-3 text-right tabular-nums"
+                                        class="px-2 sm:px-4 py-2 sm:py-3 text-right tabular-nums"
                                         >{pres}</td
                                     >
                                 </tr>
@@ -452,19 +470,24 @@
 
             <Card.Content class="p-0 overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                    <table class="w-full text-left text-xs sm:text-sm">
                         <thead
                             class="sticky top-0 bg-background/90 backdrop-blur z-10"
                         >
                             <tr class="text-muted-foreground">
-                                <th class="px-4 py-3 w-16">Pos</th>
-                                <th class="px-4 py-3">Giocatore</th>
-                                <th class="px-4 py-3 text-right w-32"
+                                <th
+                                    class="px-2 sm:px-4 py-2 sm:py-3 w-12 sm:w-16"
+                                    >Pos</th
+                                >
+                                <th class="px-2 sm:px-4 py-2 sm:py-3"
+                                    >Giocatore</th
+                                >
+                                <th
+                                    class="px-2 sm:px-4 py-2 sm:py-3 text-right w-24 sm:w-32"
                                     >Winrate</th
                                 >
                             </tr>
                         </thead>
-
                         <tbody>
                             {#each [...filteredPlayers].sort((a, b) => b.winRate - a.winRate) as player, i}
                                 {@const wr = Math.max(
@@ -474,20 +497,15 @@
                                 <tr
                                     class="group odd:bg-muted/30 even:bg-background hover:bg-accent/40 transition-colors"
                                 >
-                                    <td class="px-4 py-3 font-medium">
-                                        {#if i === 0}
-                                            🥇
-                                        {/if}
-                                        {#if i === 1}
-                                            🥈
-                                        {/if}
-                                        {#if i === 2}
-                                            🥉
-                                        {/if}
+                                    <td
+                                        class="px-2 sm:px-4 py-2 sm:py-3 font-medium"
+                                    >
+                                        {#if i === 0}🥇{/if}
+                                        {#if i === 1}🥈{/if}
+                                        {#if i === 2}🥉{/if}
                                         {#if i > 2}{i + 1}{/if}
                                     </td>
-
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 sm:px-4 py-2 sm:py-3">
                                         <div class="flex items-center gap-3">
                                             <span
                                                 class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs"
@@ -499,7 +517,7 @@
                                                     {player.name}
                                                 </div>
                                                 <div
-                                                    class="mt-1 h-1.5 w-44 rounded bg-muted"
+                                                    class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted"
                                                 >
                                                     <div
                                                         class="h-1.5 rounded bg-primary/60 transition-all"
@@ -509,9 +527,8 @@
                                             </div>
                                         </div>
                                     </td>
-
                                     <td
-                                        class="px-4 py-3 text-right tabular-nums"
+                                        class="px-2 sm:px-4 py-2 sm:py-3 text-right tabular-nums"
                                         >{wr}%</td
                                     >
                                 </tr>
@@ -525,118 +542,155 @@
 
     {#if selectedTab === "graphs"}
         <section
-            class="mb-6 w-full max-w-7xl mx-auto border rounded-xl p-6 shadow-sm"
+            class="mb-6 w-full mx-auto border rounded-xl p-4 sm:p-6 shadow-sm"
         >
-            <h2 class="text-2xl font-bold mb-2">Gol e Autogol (Stacked)</h2>
-            <p class="text-muted-foreground mb-6">
-                Visualizza i gol totali di ogni giocatore, compresi gli autogol
+            <h2 class="text-xl sm:text-2xl font-bold mb-2">
+                Gol e Autogol (Stacked)
+            </h2>
+            <p
+                class="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4"
+            >
+                Nota: i grafici sono ottimizzati per schermi desktop; su mobile
+                potrebbe essere necessario scorrere orizzontalmente o ruotare il
+                dispositivo per una migliore leggibilità.
             </p>
-            <div class="w-full max-w-[1200px] mx-auto aspect-[16/9]">
-                <Chart.Container
-                    config={barChartConfig}
-                    padding={{ top: 30, right: 20, bottom: 40, left: 50 }}
+            <div class="w-full overflow-x-auto no-scrollbar">
+                <div
+                    class="min-w-[560px] md:min-w-0 aspect-[16/10] md:aspect-[16/9] mx-auto"
                 >
-                    <BarChart
-                        bind:context
-                        data={barChartData}
-                        xScale={scaleBand().padding(0.25)}
-                        x="name"
-                        axis="x"
-                        rule={false}
-                        series={[
-                            {
-                                key: "goals",
-                                label: "Goals",
-                                color: barChartConfig.goal.color,
-                            },
-                            {
-                                key: "autogols",
-                                label: "Autogol",
-                                color: barChartConfig.autogol.color,
-                            },
-                        ]}
-                        seriesLayout="stack"
-                        props={{
-                            bars: {
-                                stroke: "none",
-                                initialY: context?.height,
-                                initialHeight: 0,
-                                motion: {
-                                    y: {
-                                        type: "tween",
-                                        duration: 500,
-                                        easing: cubicInOut,
-                                    },
-                                    height: {
-                                        type: "tween",
-                                        duration: 500,
-                                        easing: cubicInOut,
+                    <Chart.Container
+                        config={barChartConfig}
+                        padding={{ top: 24, right: 16, bottom: 36, left: 36 }}
+                    >
+                        <BarChart
+                            bind:context
+                            data={barChartData}
+                            xScale={scaleBand().padding(0.25)}
+                            x="name"
+                            axis="x"
+                            rule={false}
+                            series={[
+                                {
+                                    key: "goals",
+                                    label: "Goals",
+                                    color: barChartConfig.goal.color,
+                                },
+                                {
+                                    key: "autogols",
+                                    label: "Autogol",
+                                    color: barChartConfig.autogol.color,
+                                },
+                            ]}
+                            seriesLayout="stack"
+                            props={{
+                                bars: {
+                                    stroke: "none",
+                                    initialY: context?.height,
+                                    initialHeight: 0,
+                                    motion: {
+                                        y: {
+                                            type: "tween",
+                                            duration: 500,
+                                            easing: cubicInOut,
+                                        },
+                                        height: {
+                                            type: "tween",
+                                            duration: 500,
+                                            easing: cubicInOut,
+                                        },
                                     },
                                 },
-                            },
-                            highlight: { area: false },
-                        }}
-                        legend
-                    >
-                        {#snippet belowMarks()}
-                            <Highlight area={{ class: "fill-muted" }} />
-                        {/snippet}
-                        {#snippet tooltip()}
-                            <Chart.Tooltip />
-                        {/snippet}
-                    </BarChart>
-                </Chart.Container>
+                                highlight: { area: false },
+                            }}
+                            legend
+                        >
+                            {#snippet belowMarks()}
+                                <Highlight area={{ class: "fill-muted" }} />
+                            {/snippet}
+                            {#snippet tooltip()}
+                                <Chart.Tooltip />
+                            {/snippet}
+                        </BarChart>
+                    </Chart.Container>
+                </div>
             </div>
         </section>
 
         <section
-            class="mb-6 w-full max-w-7xl mx-auto border rounded-xl p-6 shadow-sm"
+            class="mb-6 w-full mx-auto border rounded-xl p-4 sm:p-6 shadow-sm"
         >
-            <h2 class="text-2xl font-bold mb-2">Andamento Gol per Giocatore</h2>
-            <p class="text-muted-foreground mb-6">
-                Gol segnati nel tempo per ciascun giocatore
+            <h2 class="text-xl sm:text-2xl font-bold mb-2">
+                Andamento Gol per Giocatore
+            </h2>
+            <p
+                class="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4"
+            >
+                Nota: i grafici sono ottimizzati per schermi desktop; su mobile
+                potrebbe essere necessario scorrere orizzontalmente o ruotare il
+                dispositivo per una migliore leggibilità.
             </p>
-            <div class="w-full max-w-[1200px] mx-auto aspect-[16/9]">
-                <Chart.Container
-                    config={lineChartConfig}
-                    padding={{ top: 30, right: 20, bottom: 40, left: 50 }}
+            <div class="w-full overflow-x-auto no-scrollbar">
+                <div
+                    class="min-w-[560px] md:min-w-0 aspect-[16/10] md:aspect-[16/9] mx-auto"
                 >
-                    <LineChart
-                        data={lineChartData}
-                        x="date"
-                        xScale={scalePoint().domain(
-                            lineChartData.map((d) => d.date)
-                        )}
-                        {yScale}
-                        axis="x"
-                        series={visibleSeries}
-                        props={{
-                            spline: {
-                                curve: curveMonotoneX,
-                                motion: "tween",
-                                strokeWidth: 2.5,
-                            },
-                            highlight: { points: { r: 4 } },
-                            xAxis: {
-                                format: (v: string) =>
-                                    new Date(v).toLocaleDateString("it-IT", {
-                                        day: "2-digit",
-                                        month: "short",
-                                    }),
-                            },
-                        }}
+                    <Chart.Container
+                        config={lineChartConfig}
+                        padding={{ top: 24, right: 16, bottom: 36, left: 36 }}
                     >
-                        {#snippet tooltip()}
-                            <Chart.Tooltip hideLabel />
-                        {/snippet}
-                    </LineChart>
-                </Chart.Container>
+                        <LineChart
+                            data={lineChartData}
+                            x="date"
+                            xScale={scalePoint().domain(
+                                lineChartData.map((d) => d.date)
+                            )}
+                            {yScale}
+                            axis="x"
+                            series={visibleSeries}
+                            props={{
+                                spline: {
+                                    curve: curveMonotoneX,
+                                    motion: "tween",
+                                    strokeWidth: 2.5,
+                                },
+                                highlight: { points: { r: 4 } },
+                                xAxis: {
+                                    format: (v: string) => {
+                                        const d = new Date(v);
+                                        if (typeof window === "undefined") {
+                                            return d.toLocaleDateString(
+                                                "it-IT",
+                                                {
+                                                    day: "2-digit",
+                                                    month: "short",
+                                                }
+                                            );
+                                        }
+                                        return window.innerWidth < 640
+                                            ? d.toLocaleDateString("it-IT", {
+                                                  day: "2-digit",
+                                                  month: "numeric",
+                                              })
+                                            : d.toLocaleDateString("it-IT", {
+                                                  day: "2-digit",
+                                                  month: "short",
+                                              });
+                                    },
+                                },
+                            }}
+                        >
+                            {#snippet tooltip()}
+                                <Chart.Tooltip hideLabel />
+                            {/snippet}
+                        </LineChart>
+                    </Chart.Container>
+                </div>
             </div>
-            <div class="flex flex-wrap gap-4 justify-center mt-2">
+
+            <div class="flex flex-wrap gap-2 sm:gap-3 justify-center mt-2">
                 {#each Object.keys(lineChartConfig) as key}
                     <button
                         type="button"
-                        class="flex items-center gap-2 select-none transition-opacity"
+                        class="flex items-center gap-2 select-none transition-opacity text-xs sm:text-sm"
                         class:opacity-50={!activeSeries.has(key)}
                         onclick={(e) => toggleSeries(key, e)}
                         onkeydown={(e) =>
@@ -646,25 +700,27 @@
                         aria-checked={activeSeries.has(key)}
                     >
                         <span
-                            class="w-4 h-4 rounded"
+                            class="w-3 h-3 sm:w-4 sm:h-4 rounded"
                             style="background: {lineChartConfig[key].color}"
                         />
-                        <span class="text-sm">{lineChartConfig[key].label}</span
-                        >
+                        <span>{lineChartConfig[key].label}</span>
                     </button>
                 {/each}
 
                 <button
                     type="button"
-                    class="flex items-center gap-2 select-none transition-opacity"
+                    class="flex items-center gap-2 select-none transition-opacity text-xs sm:text-sm"
                     role="switch"
                     onclick={toggleAllSeries}
                     aria-pressed={activeSeries.size ===
                         Object.keys(lineChartConfig ?? {}).length}
                 >
-                    <span class="w-4 h-4 rounded" style="background: black" />
-                    <span class="text-sm"
-                        >{activeSeries.size ===
+                    <span
+                        class="w-3 h-3 sm:w-4 sm:h-4 rounded"
+                        style="background: black"
+                    />
+                    <span>
+                        {activeSeries.size ===
                         Object.keys(lineChartConfig ?? {}).length
                             ? "Deseleziona tutti"
                             : "Seleziona tutti"}
@@ -674,58 +730,77 @@
         </section>
 
         <section
-            class="mb-6 w-full max-w-7xl mx-auto border rounded-xl p-6 shadow-sm"
+            class="mb-6 w-full mx-auto border rounded-xl p-4 sm:p-6 shadow-sm"
         >
-            <h2 class="text-2xl font-bold mb-2">Gol per Giocatore e Luogo</h2>
-            <p class="text-muted-foreground mb-6">
-                Distribuzione dei gol per ciascun giocatore in base al luogo
-                della partita
+            <h2 class="text-xl sm:text-2xl font-bold mb-2">
+                Gol per Giocatore e Luogo
+            </h2>
+            <p
+                class="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4"
+            >
+                Nota: i grafici sono ottimizzati per schermi desktop; su mobile
+                potrebbe essere necessario scorrere orizzontalmente o ruotare il
+                dispositivo per una migliore leggibilità.
             </p>
-            <div class="w-full max-w-[1200px] mx-auto aspect-[16/9]">
-                <Chart.Container config={goalsByPlaceConfig}>
-                    <BarChart
-                        bind:context
-                        data={goalsByPlaceData}
-                        xScale={scaleBand().padding(0.25)}
-                        x="name"
-                        axis="x"
-                        series={Object.keys(goalsByPlaceConfig).map(
-                            (place) => ({
-                                key: place,
-                                label: goalsByPlaceConfig[place].label,
-                                color: goalsByPlaceConfig[place].color,
-                            })
-                        )}
-                        seriesLayout="stack"
-                        props={{
-                            bars: {
-                                stroke: "none",
-                                strokeWidth: 0,
-                                initialY: context?.height,
-                                initialHeight: 0,
-                                motion: {
-                                    y: {
-                                        type: "tween",
-                                        duration: 500,
-                                        easing: cubicInOut,
-                                    },
-                                    height: {
-                                        type: "tween",
-                                        duration: 500,
-                                        easing: cubicInOut,
+            <div class="w-full overflow-x-auto no-scrollbar">
+                <div
+                    class="min-w-[560px] md:min-w-0 aspect-[16/10] md:aspect-[16/9] mx-auto"
+                >
+                    <Chart.Container config={goalsByPlaceConfig}>
+                        <BarChart
+                            bind:context
+                            data={goalsByPlaceData}
+                            xScale={scaleBand().padding(0.25)}
+                            x="name"
+                            axis="x"
+                            series={Object.keys(goalsByPlaceConfig).map(
+                                (place) => ({
+                                    key: place,
+                                    label: goalsByPlaceConfig[place].label,
+                                    color: goalsByPlaceConfig[place].color,
+                                })
+                            )}
+                            seriesLayout="stack"
+                            props={{
+                                bars: {
+                                    stroke: "none",
+                                    strokeWidth: 0,
+                                    initialY: context?.height,
+                                    initialHeight: 0,
+                                    motion: {
+                                        y: {
+                                            type: "tween",
+                                            duration: 500,
+                                            easing: cubicInOut,
+                                        },
+                                        height: {
+                                            type: "tween",
+                                            duration: 500,
+                                            easing: cubicInOut,
+                                        },
                                     },
                                 },
-                            },
-                            highlight: { area: { fill: "none" } },
-                        }}
-                        legend
-                    >
-                        {#snippet tooltip()}
-                            <Chart.Tooltip />
-                        {/snippet}
-                    </BarChart>
-                </Chart.Container>
+                                highlight: { area: { fill: "none" } },
+                            }}
+                            legend
+                        >
+                            {#snippet tooltip()}
+                                <Chart.Tooltip />
+                            {/snippet}
+                        </BarChart>
+                    </Chart.Container>
+                </div>
             </div>
         </section>
     {/if}
 </div>
+
+<style>
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>

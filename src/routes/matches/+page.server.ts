@@ -22,8 +22,6 @@ export async function load({ locals }: { locals: any }) {
         .order('match_date', { ascending: false })
         .order('match_number', { ascending: false });
 
-    console.log("matches", playerMatches);
-
     if (playerMatchesError) {
         console.error("Error fetching data:", playerMatchesError);
         return {

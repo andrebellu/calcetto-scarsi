@@ -173,28 +173,23 @@
             const dataResp = await res.json().catch(() => ({}));
             if (!ok) throw new Error(dataResp?.message || res.statusText);
 
-            // 1) Toast prima della chiusura
             toast.success("Partita aggiunta con successo!", {
                 duration: 3500,
                 dismissable: true,
             });
 
-            // 2) Aggiorna subito la lista locale (se presente)
             const newMatch = {
-                match_id: dataResp?.match_id ?? crypto.randomUUID(), // fallback
+                match_id: dataResp?.match_id ?? crypto.randomUUID(),
                 match_date,
                 luogo,
                 match_number: dataResp?.match_number ?? null,
                 team_blue_score,
                 team_red_score,
                 created_at: new Date().toISOString(),
-                players: [], // evita crash in viste che fanno .filter
+                players: [],
             };
-            if (Array.isArray(data?.matches)) {
-                data.matches.unshift(newMatch);
-            }
+            if (Array.isArray(data?.matches)) data.matches.unshift(newMatch);
 
-            // 3) Reset stato e chiusura
             luogo = "";
             match_date = "";
             bluePlayers = [];
@@ -208,8 +203,6 @@
                 ownGoals: 0,
             }));
             open = false;
-
-            // 4) Notifica il parent per un eventuale refetch
             dispatch("saved");
         } catch (e: any) {
             errorMsg = e?.message || "Errore inatteso";
@@ -219,69 +212,71 @@
     }
 
     $effect(() => {
-        if (errorMsg) {
+        if (errorMsg)
             toast.error(errorMsg, { duration: 4000, dismissable: true });
-        }
     });
 </script>
 
 <Toaster position="top-center" richColors />
 
 <Dialog.Root bind:open>
-    <div class="flex items-center justify-between mb-8">
-        <h1 class="text-4xl font-bold text-primary-600 drop-shadow">
-            Storico partite
-        </h1>
-        {#if data.isAuthenticated}
-            <Dialog.Trigger
-                class="bg-primary-500 text-white px-4 py-2 rounded shadow inline-flex items-center gap-2"
-            >
-                Aggiungi partita
-            </Dialog.Trigger>
-        {/if}
-    </div>
+    {#if data.isAuthenticated}
+        <Dialog.Trigger
+            class="bg-primary-500 text-white px-3 sm:px-4 py-2 rounded shadow inline-flex items-center gap-2"
+        >
+            Aggiungi partita
+        </Dialog.Trigger>
+    {/if}
 
     <Dialog.Content
-        class="rounded-3xl shadow-xl border border-white/30 bg-white/20 backdrop-blur-lg p-6 w-[95vw] max-w-5xl"
+        class="rounded-2xl md:rounded-3xl shadow-xl border border-white/30 bg-white/20 backdrop-blur-lg p-4 sm:p-6 w-[95vw] max-w-5xl"
     >
         <Dialog.Header>
-            <Dialog.Title class="text-xl font-semibold text-gray-900"
-                >Aggiungi nuova partita</Dialog.Title
+            <Dialog.Title
+                class="text-lg sm:text-xl font-semibold text-gray-900"
             >
-            <Dialog.Description class="text-sm text-gray-500"
-                >Inserisci i dati e assegna i giocatori alle squadre.</Dialog.Description
-            >
+                Aggiungi nuova partita
+            </Dialog.Title>
+            <Dialog.Description class="text-xs sm:text-sm text-gray-500">
+                Inserisci i dati e assegna i giocatori alle squadre.
+            </Dialog.Description>
         </Dialog.Header>
 
-        <form class="space-y-4 mt-4" on:submit|preventDefault={submitMatch}>
+        <form
+            class="space-y-4 mt-3 sm:mt-4"
+            on:submit|preventDefault={submitMatch}
+        >
             <div
-                class="flex items-center justify-center gap-4 text-lg font-semibold"
+                class="flex items-center justify-center gap-3 sm:gap-4 text-base sm:text-lg font-semibold"
             >
                 <span
-                    class="inline-flex items-center justify-center w-16 h-8 bg-blue-100 text-blue-700 font-bold rounded text-lg shadow"
-                    >{team_blue_score}</span
+                    class="inline-flex items-center justify-center w-14 sm:w-16 h-8 bg-blue-100 text-blue-700 font-bold rounded shadow"
                 >
-                <span class="text-xl font-bold text-gray-500">-</span>
+                    {team_blue_score}
+                </span>
+                <span class="text-lg sm:text-xl font-bold text-gray-500">-</span
+                >
                 <span
-                    class="inline-flex items-center justify-center w-16 h-8 bg-red-100 text-red-700 font-bold rounded text-lg shadow"
-                    >{team_red_score}</span
+                    class="inline-flex items-center justify-center w-14 sm:w-16 h-8 bg-red-100 text-red-700 font-bold rounded shadow"
                 >
+                    {team_red_score}
+                </span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input
-                    class="border p-2 w-full rounded"
+                    class="border p-2 w-full rounded text-sm"
                     bind:value={luogo}
                     placeholder="Luogo"
                 />
                 <input
-                    class="border p-2 w-full rounded"
+                    class="border p-2 w-full rounded text-sm"
                     type="date"
                     bind:value={match_date}
                 />
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Popover.Root bind:open={cbBlueOpen}>
                     <Popover.Trigger bind:ref={cbBlueTrigger}>
                         {#snippet child({ props })}
@@ -289,8 +284,6 @@
                                 {...props}
                                 variant="outline"
                                 class="w-full justify-between"
-                                role="combobox"
-                                aria-expanded={cbBlueOpen}
                             >
                                 {cbBlueValue
                                     ? freeOptions.find(
@@ -301,7 +294,7 @@
                             </Button>
                         {/snippet}
                     </Popover.Trigger>
-                    <Popover.Content class="w-[320px] p-0">
+                    <Popover.Content class="w-[300px] sm:w-[320px] p-0">
                         <Command.Root>
                             <Command.Input
                                 placeholder="Cerca giocatore disponibile…"
@@ -339,8 +332,6 @@
                                 {...props}
                                 variant="outline"
                                 class="w-full justify-between"
-                                role="combobox"
-                                aria-expanded={cbRedOpen}
                             >
                                 {cbRedValue
                                     ? freeOptions.find(
@@ -351,7 +342,7 @@
                             </Button>
                         {/snippet}
                     </Popover.Trigger>
-                    <Popover.Content class="w-[320px] p-0">
+                    <Popover.Content class="w-[300px] sm:w-[320px] p-0">
                         <Command.Root>
                             <Command.Input
                                 placeholder="Cerca giocatore disponibile…"
@@ -383,14 +374,14 @@
                 </Popover.Root>
             </div>
 
-            <div class="flex gap-4">
+            <div class="flex flex-col sm:flex-row gap-4">
                 <div class="flex-1">
                     <label
                         class="text-blue-500 font-semibold flex items-center gap-2"
                         >Squadra Blu</label
                     >
                     <div
-                        class="relative min-h-[260px] max-h-[260px] overflow-y-scroll pr-2 box-border border rounded-2xl p-2 mb-2 grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(140px,1fr))] [grid-auto-rows:84px] contain-layout ring-2 ring-transparent bg-gradient-to-tr from-blue-100/60 via-blue-200/60 to-blue-50/80 [scrollbar-width:none] [scrollbar-color:transparent_transparent] [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:bg-transparent"
+                        class="relative min-h-[220px] sm:min-h-[260px] max-h-[260px] overflow-y-scroll pr-2 box-border border rounded-2xl p-2 mb-2 grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(128px,1fr))] sm:[grid-template-columns:repeat(auto-fill,minmax(140px,1fr))] [grid-auto-rows:84px] contain-layout ring-2 ring-transparent bg-gradient-to-tr from-blue-100/60 via-blue-200/60 to-blue-50/80 no-scrollbar"
                         style="touch-action: pan-y;"
                     >
                         {#each bluePlayers as player (player.id)}
@@ -464,7 +455,7 @@
                         >Squadra Rossi</label
                     >
                     <div
-                        class="relative min-h-[260px] max-h-[260px] overflow-y-scroll pr-2 box-border border rounded-2xl p-2 mb-2 grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(140px,1fr))] [grid-auto-rows:84px] contain-layout ring-2 ring-transparent bg-gradient-to-tr from-red-100/70 via-red-300/60 to-red-50/80 [scrollbar-width:none] [scrollbar-color:transparent_transparent] [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:bg-transparent"
+                        class="relative min-h-[220px] sm:min-h-[260px] max-h-[260px] overflow-y-scroll pr-2 box-border border rounded-2xl p-2 mb-2 grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(128px,1fr))] sm:[grid-template-columns:repeat(auto-fill,minmax(140px,1fr))] [grid-auto-rows:84px] contain-layout ring-2 ring-transparent bg-gradient-to-tr from-red-100/70 via-red-300/60 to-red-50/80 no-scrollbar"
                         style="touch-action: pan-y;"
                     >
                         {#each redPlayers as player (player.id)}
@@ -529,7 +520,9 @@
                 </div>
             </div>
 
-            <Dialog.Footer class="mt-4 flex items-center justify-end gap-3">
+            <Dialog.Footer
+                class="mt-3 sm:mt-4 flex items-center justify-end gap-2 sm:gap-3"
+            >
                 <Dialog.Close class="px-3 py-2 rounded border"
                     >Annulla</Dialog.Close
                 >

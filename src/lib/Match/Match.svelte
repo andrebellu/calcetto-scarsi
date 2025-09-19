@@ -19,7 +19,7 @@
 </script>
 
 <div
-    class="rounded-3xl shadow-xl border border-white/30 bg-white/20 backdrop-blur-lg p-6 max-w-3xl mx-auto"
+    class="rounded-3xl shadow-xl border border-white/30 bg-white/20 backdrop-blur-lg p-6 max-w-7xl mx-auto"
 >
     <div
         class="flex flex-col md:flex-row md:justify-between md:items-center mb-4"
