@@ -2,7 +2,7 @@
   import Badge from "$lib/Badge/Badge.svelte";
   export let data;
 
-  let dataDecisa = true;
+  let dataDecisa = false;
   let prossimaPartita = {
     data: "20-09-2025",
     ora: "17.30",

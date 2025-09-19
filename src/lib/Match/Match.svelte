@@ -133,18 +133,6 @@
           <li class="py-2 flex items-center justify-between">
             <span class="font-medium text-blue-700 flex items-center gap-1.5">
               {player.players.name}
-              {#if mvpSet.has(pid(player))}
-                <Badge variant="secondary" class="bg-amber-100 text-amber-800">
-                  <CrownIcon class="w-4 h-4" />
-                  <span>MVP</span>
-                </Badge>
-              {/if}
-              {#if svpSet.has(pid(player))}
-                <Badge variant="secondary" class="bg-gray-100 text-gray-800">
-                  <Award class="w-4 h-4" />
-                  <span>SVP</span>
-                </Badge>
-              {/if}
             </span>
             <span class="flex items-center gap-2">
               <span
@@ -186,18 +174,6 @@
           <li class="py-2 flex items-center justify-between">
             <span class="font-medium text-red-700 flex items-center gap-1.5">
               {player.players.name}
-              {#if mvpSet.has(pid(player))}
-                <Badge variant="secondary" class="bg-amber-100 text-amber-800">
-                  <CrownIcon class="w-4 h-4" />
-                  <span>MVP</span>
-                </Badge>
-              {/if}
-              {#if svpSet.has(pid(player))}
-                <Badge variant="secondary" class="bg-gray-100 text-gray-800">
-                  <Award class="w-4 h-4" />
-                  <span>SVP</span>
-                </Badge>
-              {/if}
             </span>
             <span class="flex items-center gap-2">
               <span
