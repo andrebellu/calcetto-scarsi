@@ -8,14 +8,20 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 
     depends("poll:data");
 
-    // 1) sondaggio aperto
+    // 1) ultimo sondaggio (singolo)
     const { data: poll, error: pollErr } = await supabase
         .from("poll")
         .select("*")
-        .eq("status", "open")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+
+    // 1b) ultimi tre sondaggi (lista)
+    const { data: recentPolls = [] } = await supabase
+        .from("poll")
+        .select("poll_id, title, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(3);
 
     if (pollErr || !poll) {
         return {
@@ -26,6 +32,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
             session,
             isLogged: !!user,
             canVote: false,
+            recentPolls, // nuova proprietà per la UI
         };
     }
 
@@ -130,5 +137,6 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
         canVote: poll.status === "open",
         chosenPlayerId,
         players: availablePlayers,
+        recentPolls,
     };
 };
