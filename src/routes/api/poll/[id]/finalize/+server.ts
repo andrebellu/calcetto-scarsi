@@ -7,9 +7,6 @@ export const POST: RequestHandler = async ({ locals, params }) => {
   const { user } = await locals.safeGetSession();
   if (!user) throw error(401, 'Unauthorized');
 
-  const isAdmin = user.app_metadata?.role === 'admin';
-  if (!isAdmin) throw error(403, 'Forbidden');
-
   const poll_id = Number(params.id);
   const { error: rpcErr } = await supabase.rpc('finalize_poll', { p_poll_id: poll_id });
   if (rpcErr) throw error(500, rpcErr.message);
