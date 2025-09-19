@@ -11,6 +11,7 @@
     import * as Card from "$lib/components/ui/card/index.js";
     import { cubicInOut } from "svelte/easing";
     import { onMount } from "svelte";
+    import Navbar from "$lib/Navbar/Navbar.svelte";
 
     const { data } = $props();
     let context = $state<ChartContextValue>();
@@ -232,6 +233,7 @@
 </script>
 
 <div class="max-w-3xl mx-auto py-8">
+    <Navbar />
     <h1 class="text-3xl font-bold mb-6 text-primary-500">Statistiche</h1>
     <div class="flex gap-4 mb-6">
         <button

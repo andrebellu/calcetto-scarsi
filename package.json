@@ -34,6 +34,8 @@
 		"@supabase/ssr": "^0.7.0",
 		"@supabase/supabase-js": "^2.57.4",
 		"@tailwindcss/vite": "^4.1.13",
+		"mode-watcher": "^1.1.0",
+		"svelte-sonner": "^1.0.5",
 		"tailwindcss": "^4.1.13"
 	}
 }

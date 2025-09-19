@@ -1157,9 +1157,11 @@ __metadata:
     bits-ui: ^2.8.6
     clsx: ^2.1.1
     layerchart: next
+    mode-watcher: ^1.1.0
     svelte: ^5.0.0
     svelte-check: ^4.0.0
     svelte-dnd-action: ^0.9.65
+    svelte-sonner: ^1.0.5
     tailwind-merge: ^3.3.1
     tailwind-variants: ^1.0.0
     tailwindcss: ^4.1.13
@@ -2202,6 +2204,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mode-watcher@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "mode-watcher@npm:1.1.0"
+  dependencies:
+    runed: ^0.25.0
+    svelte-toolbelt: ^0.7.1
+  peerDependencies:
+    svelte: ^5.27.0
+  checksum: 51ed67e6080c35f9b894d50b743a1eb4ee99ea422abe93d08df1c45952ccf33983471c149261b06011cf129d7910ac7c8f3b35a2265f62adc932eb61d3ccacf7
+  languageName: node
+  linkType: hard
+
 "mri@npm:^1.1.0":
   version: 1.2.0
   resolution: "mri@npm:1.2.0"
@@ -2453,6 +2467,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"runed@npm:^0.25.0":
+  version: 0.25.0
+  resolution: "runed@npm:0.25.0"
+  dependencies:
+    esm-env: ^1.0.0
+  peerDependencies:
+    svelte: ^5.7.0
+  checksum: 1589e1da20ba4de76bd075a49333d0312cd17f6e56073b8cae1958238bb311e0fa3b3a3fba1b14140497fc510ebec7ef8b983c8525366ad6533033d987721a59
+  languageName: node
+  linkType: hard
+
+"runed@npm:^0.28.0":
+  version: 0.28.0
+  resolution: "runed@npm:0.28.0"
+  dependencies:
+    esm-env: ^1.0.0
+  peerDependencies:
+    svelte: ^5.7.0
+  checksum: 87489c1688a33d4292f17033e70c2940d993b6f238730c52210a851e624e8d968b7ae90b9273752f2c3d439e539250cddf8a2e92829d3c01fd3dad83f1a20afe
+  languageName: node
+  linkType: hard
+
 "runed@npm:^0.29.0, runed@npm:^0.29.1":
   version: 0.29.2
   resolution: "runed@npm:0.29.2"
@@ -2668,7 +2704,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte-toolbelt@npm:^0.7.0":
+"svelte-sonner@npm:^1.0.5":
+  version: 1.0.5
+  resolution: "svelte-sonner@npm:1.0.5"
+  dependencies:
+    runed: ^0.28.0
+  peerDependencies:
+    svelte: ^5.0.0
+  checksum: 6d5a45eac5ab0fa90ce3e2bc4fca00343a1b9e6dd9464dc16f3205e7cf581a2f78e41b34242313317f53105e86bf11b936ce4a86088c6d70075264e715c4138e
+  languageName: node
+  linkType: hard
+
+"svelte-toolbelt@npm:^0.7.0, svelte-toolbelt@npm:^0.7.1":
   version: 0.7.1
   resolution: "svelte-toolbelt@npm:0.7.1"
   dependencies:

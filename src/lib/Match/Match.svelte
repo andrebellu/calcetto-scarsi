@@ -19,14 +19,14 @@
 </script>
 
 <div
-    class="rounded-3xl shadow-xl border border-white/30 bg-white/20 backdrop-blur-lg p-6 max-w-2xl mx-auto"
+    class="rounded-3xl shadow-xl border border-white/30 bg-white/20 backdrop-blur-lg p-6 max-w-3xl mx-auto"
 >
     <div
         class="flex flex-col md:flex-row md:justify-between md:items-center mb-4"
     >
         <div>
             <div class="text-sm text-gray-500">
-                Partita #{match.match_number}
+                Partita #{match.match_id}
             </div>
             <div class="text-lg font-semibold text-gray-900">{match.luogo}</div>
             <div class="text-xs text-gray-400">{match.match_date}</div>

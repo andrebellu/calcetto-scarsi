@@ -1,12 +1,12 @@
 import { supabase } from "$lib/supabaseClient";
 
-export async function load() {
+export async function load({ locals }: { locals: any }) {
     const { data: playerMatches, error: playerMatchesError } = await supabase
         .from('matches')
         .select(`
             match_date,
             luogo,
-            match_number,
+            match_id,
             team_blue_score,
             team_red_score,
             player_match!inner (
@@ -36,8 +36,16 @@ export async function load() {
         .from("players")
         .select("*");
 
+
+    let isAuthenticated = false;
+    if (locals && locals.user) {
+        isAuthenticated = true;
+    }
+
+
     return {
         matches: playerMatches,
+        isAuthenticated: isAuthenticated,
         error: null,
         players: players,
     };
