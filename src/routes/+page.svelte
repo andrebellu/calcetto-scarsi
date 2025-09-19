@@ -10,7 +10,9 @@
   };
 </script>
 
-<div class="min-h-screen flex flex-col items-center justify-center">
+<div
+  class="min-h-screen flex flex-col items-center justify-center relative bg-transparent"
+>
   <div class="mb-10 mt-8 text-center">
     <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight">
       <span class="font-light">Calcetto per</span>
@@ -53,8 +55,7 @@
       href="/players"
       class="group block rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-primary-300 hover:border-primary-400 transition-all p-8 text-center relative overflow-hidden backdrop-blur-md hover:scale-101"
     >
-      <span
-        class="material-symbols-outlined text-primary-400 mb-2 group-hover:scale-110 transition"
+      <span class="material-symbols-outlined text-primary-400 mb-2 transition"
         >apparel</span
       >
       <h2 class="text-2xl font-bold text-surface-900 mb-1">Giocatori</h2>
@@ -70,7 +71,7 @@
       class="group block rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-primary-300 hover:border-primary-400 transition-all p-8 text-center relative overflow-hidden backdrop-blur-md hover:scale-101"
     >
       <span
-        class="material-symbols-outlined text-8xl text-primary-400 mb-2 group-hover:scale-110 transition"
+        class="material-symbols-outlined text-8xl text-primary-400 mb-2 transition"
         >sports_soccer</span
       >
       <h2 class="text-2xl font-bold text-surface-900 mb-1">Partite</h2>
@@ -86,7 +87,7 @@
       class="group block rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-primary-300 hover:border-primary-400 transition-all p-8 text-center relative overflow-hidden backdrop-blur-md hover:scale-101"
     >
       <span
-        class="material-symbols-outlined text-8xl text-secondary-400 mb-2 group-hover:scale-110 transition"
+        class="material-symbols-outlined text-8xl text-secondary-400 mb-2 transition"
         >bar_chart</span
       >
       <h2 class="text-2xl font-bold text-surface-900 mb-1">Statistiche</h2>
@@ -102,7 +103,7 @@
         class="group block rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-primary-300 hover:border-primary-400 transition-all p-8 text-center relative overflow-hidden backdrop-blur-md"
       >
         <span
-          class="material-symbols-outlined text-8xl text-secondary-400 mb-2 group-hover:scale-110 transition"
+          class="material-symbols-outlined text-8xl text-secondary-400 mb-2 transition"
           >stadium</span
         >
         <h2 class="text-2xl font-bold text-surface-900 mb-1">
@@ -123,7 +124,7 @@
         class="group block rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-primary-300 hover:border-primary-400 transition-all p-8 text-center relative overflow-hidden backdrop-blur-md hover:scale-101"
       >
         <span
-          class="material-symbols-outlined text-8xl text-secondary-400 mb-2 group-hover:scale-110 transition"
+          class="material-symbols-outlined text-8xl text-secondary-400 mb-2 transition"
           >poll</span
         >
         <h2 class="text-2xl font-bold text-surface-900 mb-1">Sondaggio</h2>
