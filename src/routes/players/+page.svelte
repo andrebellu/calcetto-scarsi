@@ -20,62 +20,40 @@
 
   let isAuthenticated = data.isAuthenticated;
 
-  // filtri semplici e contatori
+  // stato ricerca e toggle
   let query = $state("");
   let debounced = $state("");
   let showTemporary = $state(true);
   let showFixed = $state(true);
 
-  // debounce ricerca
+  // debounce: traccia "query" SINCRONAMENTE
   let t: any;
   $effect(() => {
+    const q = query; // registra la dipendenza sincrona
     clearTimeout(t);
-    t = setTimeout(() => (debounced = query), 250);
+    t = setTimeout(() => (debounced = q), 250);
     return () => clearTimeout(t);
   });
 
-  function matchesQuery(p: any) {
-    const q = debounced.trim().toLowerCase();
-    if (!q) return true;
-    return (p.name || "").toLowerCase().includes(q);
-  }
+  // query normalizzata derivata
+  const qLower = $derived(debounced.trim().toLowerCase());
 
-  let fixedPlayers = $state([]);
-  let tempPlayers = $state([]);
+  // filtri derivati (niente effetti, niente store manuali)
+  const fixedPlayers = $derived(
+    (data.players || []).filter((p) => {
+      if (p.is_temporary) return false;
+      if (!qLower) return true;
+      return (p.name || "").toLowerCase().includes(qLower);
+    })
+  );
 
-  $effect(() => {
-    void debounced;
-    fixedPlayers = (data.players || [])
-      .filter(
-        (p: {
-          name: string;
-          is_temporary: boolean;
-          goals: number;
-          wins: number;
-          matchesPlayed: number;
-          winRate: number;
-          golPerMatch: number;
-        }) => !p.is_temporary
-      )
-      .filter(matchesQuery);
-  });
-
-  $effect(() => {
-    void debounced;
-    tempPlayers = (data.players || [])
-      .filter(
-        (p: {
-          name: string;
-          is_temporary: boolean;
-          goals: number;
-          wins: number;
-          matchesPlayed: number;
-          winRate: number;
-          golPerMatch: number;
-        }) => p.is_temporary
-      )
-      .filter(matchesQuery);
-  });
+  const tempPlayers = $derived(
+    (data.players || []).filter((p) => {
+      if (!p.is_temporary) return false;
+      if (!qLower) return true;
+      return (p.name || "").toLowerCase().includes(qLower);
+    })
+  );
 </script>
 
 <div class="mx-auto w-full max-w-7xl px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
