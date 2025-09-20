@@ -55,3 +55,24 @@ export const DELETE: RequestHandler = async ({ locals, params, url }) => {
   if (e) throw error(500, e.message);
   return json({ ok: true });
 };
+
+export const GET: RequestHandler = async ({ params, locals }) => {
+  const poll_id = Number(params.id);
+  const supabase = locals.supabase;
+
+  const { data, error } = await supabase
+    .from('poll_vote')
+    .select('player_id, choice, players!inner(name, player_id)')
+    .eq('poll_id', poll_id)
+    .eq('choice', 'yes');
+
+  if (error) return new Response('Error', { status: 500 });
+
+  // Unique by player_id
+  const map = new Map<string, { player_id: string; name: string }>();
+  for (const row of data ?? []) {
+    const p = (row as any).players;
+    if (p?.player_id) map.set(p.player_id, { player_id: p.player_id, name: p.name });
+  }
+  return json(Array.from(map.values()));
+};

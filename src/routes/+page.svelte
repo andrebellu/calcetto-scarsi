@@ -2,12 +2,8 @@
   import Badge from "$lib/Badge/Badge.svelte";
   export let data;
 
-  let dataDecisa = false;
-  let prossimaPartita = {
-    data: "20-09-2025",
-    ora: "17.30",
-    luogo: "Lograto",
-  };
+  const dataDecisa = data.dataDecisa;
+  const prossimaPartita = data.prossimaPartita;
 </script>
 
 <div
@@ -121,7 +117,8 @@
     </a>
 
     <!-- Sondaggio / Prossima partita -->
-    {#if dataDecisa}
+    <!-- Sondaggio / Ultima convocazione -->
+    {#if data.dataDecisa && data.prossimaPartita}
       <div
         class="group block rounded-2xl md:rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-primary-300 hover:border-primary-400 transition-all p-4 md:p-8 text-center overflow-hidden backdrop-blur-md min-h-28"
       >
@@ -129,19 +126,29 @@
           class="material-symbols-outlined text-5xl md:text-8xl text-secondary-400 mb-1 md:mb-2 transition"
           >stadium</span
         >
-        <h2
-          class="text-lg md:text-2xl font-bold text-surface-900 mb-0.5 md:mb-1"
-        >
-          {prossimaPartita.luogo}
+        <h2 class="text-lg md:2xl font-bold text-surface-900 mb-0.5 md:mb-1">
+          {data.prossimaPartita.luogo}
         </h2>
         <p class="text-surface-600 mb-2 hidden sm:block">
-          Prossima partita: {prossimaPartita.data} alle {prossimaPartita.ora}
+          Prossima partita: {data.prossimaPartita.data} alle {data
+            .prossimaPartita.ora}
         </p>
+
+        <!-- Link sempre visibile per tutti -->
         <div
           class="mt-1 md:mt-2 text-secondary-500 font-semibold group-hover:underline text-sm md:text-base"
         >
-          Arrivare mezz'ora prima!
+          <a href="/planned">Vedi convocazioni →</a>
         </div>
+
+        <!-- Link admin opzionale -->
+        {#if data.isAuthenticated}
+          <div
+            class="mt-1 text-primary-500 font-semibold group-hover:underline text-sm md:text-base"
+          >
+            <a href="/poll">Crea nuovo sondaggio →</a>
+          </div>
+        {/if}
       </div>
     {:else}
       <a
@@ -152,9 +159,7 @@
           class="material-symbols-outlined text-5xl md:text-8xl text-secondary-400 mb-1 md:mb-2 transition"
           >poll</span
         >
-        <h2
-          class="text-lg md:text-2xl font-bold text-surface-900 mb-0.5 md:mb-1"
-        >
+        <h2 class="text-lg md:2xl font-bold text-surface-900 mb-0.5 md:mb-1">
           Sondaggio
         </h2>
         <p class="text-surface-600 mb-2 hidden sm:block">
