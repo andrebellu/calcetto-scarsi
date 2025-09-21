@@ -99,14 +99,23 @@
     location.reload();
   }
 
+  const itWeekday = new Intl.DateTimeFormat("it-IT", { weekday: "long" });
+  const itDate = new Intl.DateTimeFormat("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+  }); // gg/mm
+
   // pie data
   const chartData = $derived(
     (data.options ?? [])
       .map((opt) => {
-        const label =
-          `${opt.match_date ?? ""} ${opt.start_time ?? ""}`.trim() ||
-          opt.luogo ||
-          `Opzione ${opt.option_id}`;
+        const dt = opt.match_date ? new Date(opt.match_date) : null;
+        const dayName = dt ? itWeekday.format(dt) : "";
+        const dayShort = dt ? itDate.format(dt) : (opt.match_date ?? "");
+        const when = [dayName, dayShort, opt.start_time ?? ""]
+          .filter(Boolean)
+          .join(" • ");
+        const label = when || opt.luogo || `Opzione ${opt.option_id}`;
         return { label, value: data.counts[opt.option_id] ?? 0 };
       })
       .filter((d) => d.value > 0)
@@ -645,6 +654,10 @@
         <!-- Lista opzioni -->
         <section class="space-y-3" class:hidden={recent.status === "closed"}>
           {#each data.options as opt}
+            {@const dt = opt.match_date ? new Date(opt.match_date) : null}
+            {@const dayName = dt ? itWeekday.format(dt) : ""}
+            {@const dayShort = dt ? itDate.format(dt) : (opt.match_date ?? "")}
+
             <label class="flex items-center gap-3 p-3 rounded-xl border">
               <input
                 type="checkbox"
@@ -661,7 +674,8 @@
               />
               <div class="flex-1">
                 <div class="font-semibold">
-                  {opt.luogo} • {opt.match_date} • {opt.start_time}
+                  {opt.luogo} • {dayName}
+                  {dayShort} • {opt.start_time}
                 </div>
                 {#if opt.note}
                   <div class="text-sm text-muted-foreground">
