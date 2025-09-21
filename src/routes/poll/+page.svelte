@@ -9,8 +9,6 @@
   import { goto } from "$app/navigation";
   import Button from "$lib/components/ui/button/button.svelte";
   import Badge from "$lib/components/ui/badge/badge.svelte";
-  import toast from "daisyui/components/toast";
-  import { Toaster } from "svelte-sonner";
 
   const { data } = $props<{
     poll: { poll_id: number; title: string; status: string } | null;
