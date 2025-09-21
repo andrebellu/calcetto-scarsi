@@ -1,9 +1,6 @@
 <script>
   import Badge from "$lib/Badge/Badge.svelte";
   export let data;
-
-  const dataDecisa = data.dataDecisa;
-  const prossimaPartita = data.prossimaPartita;
 </script>
 
 <div

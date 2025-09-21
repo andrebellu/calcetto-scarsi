@@ -4,6 +4,22 @@
 
   // utili per formattazione opzionale lato client
   const partita = data.prossimaPartita;
+
+  // Ordine portieri: usa gk_order da DB se presente, altrimenti mantiene l’ordine originale
+  const orderedA = (data.squads?.A ?? [])
+    .slice()
+    .sort(
+      (p1, p2) =>
+        (p1.gk_order ?? Number.MAX_SAFE_INTEGER) -
+        (p2.gk_order ?? Number.MAX_SAFE_INTEGER)
+    );
+  const orderedB = (data.squads?.B ?? [])
+    .slice()
+    .sort(
+      (p1, p2) =>
+        (p1.gk_order ?? Number.MAX_SAFE_INTEGER) -
+        (p2.gk_order ?? Number.MAX_SAFE_INTEGER)
+    );
 </script>
 
 <div class="mx-auto w-full max-w-4xl px-4 py-6 md:py-10">
@@ -87,7 +103,7 @@
         {/if}
       </div>
 
-      <!-- Squadra B: bordo verde -->
+      <!-- Squadra B: bordo blu -->
       <div
         class="rounded-2xl border border-blue-400 p-4 shadow-sm backdrop-blur"
       >
@@ -119,6 +135,123 @@
             Nessun giocatore assegnato
           </p>
         {/if}
+      </div>
+    </section>
+
+    <!-- Ordine portieri (mini-timeline mobile, lista numerata da md+) -->
+    <section class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <!-- Ordine A -->
+      <div class="rounded-2xl border border-red-400 p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-semibold">Ordine portieri — A</h3>
+          <span
+            class="text-[11px] rounded-full bg-red-100 text-red-700 px-2 py-0.5"
+          >
+            {orderedA.length} GK
+          </span>
+        </div>
+
+        <!-- Mobile: timeline verticale -->
+        <ul class="md:hidden relative pl-6 border-l border-red-200 space-y-3">
+          {#if orderedA.length}
+            {#each orderedA as p, i (p.player_id)}
+              <li class="relative">
+                <span
+                  class="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-red-200"
+                ></span>
+                <div
+                  class="flex items-center justify-between rounded-lg bg-red-400/80 border border-red-100 px-3 py-1.5"
+                >
+                  <span class="text-sm">{p.name}</span>
+                  <span
+                    class="text-xs rounded-full bg-white px-2 py-0.5 text-red-700"
+                    >#{i + 1}</span
+                  >
+                </div>
+              </li>
+            {/each}
+          {:else}
+            <li class="text-sm text-muted-foreground">Nessun giocatore</li>
+          {/if}
+        </ul>
+
+        <!-- Desktop/Tablet: lista numerata -->
+        <ol class="hidden md:block list-decimal list-inside space-y-1">
+          {#if orderedA.length}
+            {#each orderedA as p, i (p.player_id)}
+              <li
+                class="flex items-center justify-between rounded-lg border border-red-100 bg-red-400 px-3 py-1.5"
+              >
+                <span class="text-sm">{p.name}</span>
+                <span
+                  class="text-xs rounded-full bg-white px-2 py-0.5 text-red-700"
+                  >#{i + 1}</span
+                >
+              </li>
+            {/each}
+          {:else}
+            <li class="text-sm text-muted-foreground list-none">
+              Nessun giocatore
+            </li>
+          {/if}
+        </ol>
+      </div>
+
+      <!-- Ordine B -->
+      <div class="rounded-2xl border border-blue-400 p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-semibold">Ordine portieri — B</h3>
+          <span
+            class="text-[11px] rounded-full bg-blue-100 text-blue-700 px-2 py-0.5"
+          >
+            {orderedB.length} GK
+          </span>
+        </div>
+
+        <!-- Mobile: timeline verticale -->
+        <ul class="md:hidden relative pl-6 border-l border-blue-200 space-y-3">
+          {#if orderedB.length}
+            {#each orderedB as p, i (p.player_id)}
+              <li class="relative">
+                <span
+                  class="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-blue-200"
+                ></span>
+                <div
+                  class="flex items-center justify-between rounded-lg bg-blue-400/80 border border-blue-100 px-3 py-1.5"
+                >
+                  <span class="text-sm">{p.name}</span>
+                  <span
+                    class="text-xs rounded-full bg-white px-2 py-0.5 text-blue-700"
+                    >#{i + 1}</span
+                  >
+                </div>
+              </li>
+            {/each}
+          {:else}
+            <li class="text-sm text-muted-foreground">Nessun giocatore</li>
+          {/if}
+        </ul>
+
+        <!-- Desktop/Tablet: lista numerata -->
+        <ol class="hidden md:block list-decimal list-inside space-y-1">
+          {#if orderedB.length}
+            {#each orderedB as p, i (p.player_id)}
+              <li
+                class="flex items-center justify-between rounded-lg border border-blue-100 bg-blue-400 px-3 py-1.5"
+              >
+                <span class="text-sm">{p.name}</span>
+                <span
+                  class="text-xs rounded-full bg-white px-2 py-0.5 text-blue-700"
+                  >#{i + 1}</span
+                >
+              </li>
+            {/each}
+          {:else}
+            <li class="text-sm text-muted-foreground list-none">
+              Nessun giocatore
+            </li>
+          {/if}
+        </ol>
       </div>
     </section>
 

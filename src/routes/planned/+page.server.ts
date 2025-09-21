@@ -1,4 +1,3 @@
-// src/routes/convocazioni/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { supabase } from '$lib/supabaseClient';
 
@@ -13,29 +12,29 @@ export const load: PageServerLoad = async ({ locals }) => {
     .order('created_at', { ascending: false })
     .order('fixture_id', { ascending: false })
     .limit(1)
-    .maybeSingle(); // zero/una riga [web:229]
-
+    .maybeSingle();
   if (fxErr) {
     return { isAuthenticated, dataDecisa: false, prossimaPartita: null, squads: null, error: fxErr.message };
   }
-
   if (!fx) {
     return { isAuthenticated, dataDecisa: false, prossimaPartita: null, squads: null };
   }
 
-  // assegnazioni (se presenti): A/B/P con nome giocatore
-  const { data: rows, error: fpErr } = await supabase
+  // assegnazioni: A/B/P con nome e gk_order
+  const { data: rows } = await supabase
     .from('fixture_player')
-    .select('player_id, team, is_goalkeeper, players!inner(name)')
+    .select('player_id, team, is_goalkeeper, gk_order, players!inner(name)')
     .eq('fixture_id', fx.fixture_id);
 
-  const squads = { A: [] as Array<{ player_id: string; name: string; is_goalkeeper: boolean }>,
-                   B: [] as Array<{ player_id: string; name: string; is_goalkeeper: boolean }>,
-                   P: [] as Array<{ player_id: string; name: string; is_goalkeeper: boolean }> };
+  const squads = {
+    A: [] as Array<{ player_id: string; name: string; is_goalkeeper: boolean; gk_order?: number }>,
+    B: [] as Array<{ player_id: string; name: string; is_goalkeeper: boolean; gk_order?: number }>,
+    P: [] as Array<{ player_id: string; name: string; is_goalkeeper: boolean; gk_order?: number }>
+  };
 
   for (const r of rows ?? []) {
     const name = (r as any).players?.name ?? 'N/D';
-    const item = { player_id: r.player_id, name, is_goalkeeper: !!r.is_goalkeeper };
+    const item = { player_id: r.player_id, name, is_goalkeeper: !!r.is_goalkeeper, gk_order: r.gk_order ?? undefined };
     if (r.team === 'A') squads.A.push(item);
     else if (r.team === 'B') squads.B.push(item);
     else squads.P.push(item);

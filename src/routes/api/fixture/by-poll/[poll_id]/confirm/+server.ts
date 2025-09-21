@@ -1,6 +1,7 @@
 // src/routes/api/fixture/by-poll/[poll_id]/confirm/+server.ts
 import { json, error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
+import { mulberry32, shuffle } from "$lib/utils/random";
 
 export const POST: RequestHandler = async ({ params, locals, request }) => {
   const supabase = locals.supabase;
@@ -112,8 +113,10 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
           player_id: string;
           team: "A" | "B" | "P";
           is_goalkeeper: boolean;
+          gk_order?: number;
         }
       >();
+
       for (const p of body.players) {
         map.set(p.player_id, {
           fixture_id,
@@ -123,6 +126,16 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
         });
       }
       const rows = Array.from(map.values());
+
+      const rowsA = rows.filter((r) => r.team === "A");
+      const rowsB = rows.filter((r) => r.team === "B");
+
+      shuffle(rowsA, mulberry32(fixture_id * 1337 + 65)).forEach(
+        (r, i) => (r.gk_order = i + 1)
+      );
+      shuffle(rowsB, mulberry32(fixture_id * 1337 + 66)).forEach(
+        (r, i) => (r.gk_order = i + 1)
+      );
 
       const { error: upErr } = await supabase
         .from("fixture_player")
