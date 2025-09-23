@@ -1,4 +1,3 @@
-// src/routes/api/poll/[id]/vote/+server.ts
 import { json, error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 
@@ -56,23 +55,45 @@ export const DELETE: RequestHandler = async ({ locals, params, url }) => {
   return json({ ok: true });
 };
 
-export const GET: RequestHandler = async ({ params, locals }) => {
+export const GET: RequestHandler = async ({ params, locals, url }) => {
   const poll_id = Number(params.id);
+  if (!Number.isInteger(poll_id) || poll_id <= 0) {
+    throw error(400, "poll_id non valido");
+  }
+
   const supabase = locals.supabase;
+  const option_id_str = url.searchParams.get("option_id");
+  const option_id = option_id_str ? Number(option_id_str) : null;
+  if (option_id_str && (!Number.isInteger(option_id!) || option_id! <= 0)) {
+    throw error(400, "option_id non valido");
+  }
 
-  const { data, error } = await supabase
-    .from('poll_vote')
-    .select('player_id, choice, players!inner(name, player_id)')
-    .eq('poll_id', poll_id)
-    .eq('choice', 'yes');
+  // Base query: tutti i "yes" del sondaggio
+  let q = supabase
+    .from("poll_vote")
+    .select("player_id, choice, option_id, players!inner(name, player_id)")
+    .eq("poll_id", poll_id)
+    .eq("choice", "yes");
 
-  if (error) return new Response('Error', { status: 500 });
+  // Filtro opzionale per singola opzione
+  if (option_id) {
+    q = q.eq("option_id", option_id);
+  }
 
-  // Unique by player_id
+  const { data, error: e } = await q;
+  if (e) {
+    console.error("poll_vote GET error", e);
+    return new Response("Error", { status: 500 });
+  }
+
+  // Unici per player_id (utile sia senza filtro, sia in presenza di dati duplicati)
   const map = new Map<string, { player_id: string; name: string }>();
   for (const row of data ?? []) {
     const p = (row as any).players;
-    if (p?.player_id) map.set(p.player_id, { player_id: p.player_id, name: p.name });
+    if (p?.player_id) {
+      map.set(p.player_id, { player_id: p.player_id, name: p.name });
+    }
   }
   return json(Array.from(map.values()));
 };
+
