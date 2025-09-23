@@ -1,4 +1,3 @@
-// src/routes/api/fixture/[id]/players/+server.ts
 import { json, error } from "@sveltejs/kit";
 export const GET = async ({ params, locals }) => {
   const supabase = locals.supabase;

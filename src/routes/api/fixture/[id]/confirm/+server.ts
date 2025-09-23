@@ -1,4 +1,3 @@
-// src/routes/api/fixture/[id]/confirm/+server.ts
 import { json, error } from "@sveltejs/kit";
 export const POST = async ({ params, locals }) => {
   const fixture_id = Number(params.id);

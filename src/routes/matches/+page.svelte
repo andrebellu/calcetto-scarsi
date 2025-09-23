@@ -9,7 +9,6 @@
     import * as Command from "$lib/components/ui/command/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
     import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
-    import { onMount } from "svelte";
 
     // Props + derived dialog data
     const { data } = $props<{
@@ -45,13 +44,10 @@
         return Number.isFinite(ts) ? ts : 0;
     }
 
-    // Derived data
-    // Derived data
     const filtered = $derived(
         (() => {
             const list = Array.isArray(data.matches) ? data.matches : [];
 
-            // Normalizza players da player_match e calcola MVP/SVP
             const normalized = list.map((m: any) => {
                 const pms = Array.isArray(m.player_match) ? m.player_match : [];
                 const players = pms.map((pm: any) => ({
@@ -298,14 +294,47 @@
                     </Button>
                 {/if}
 
-                <select
-                    class="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                    bind:value={sortKey}
-                    aria-label="Ordina per data"
-                >
-                    <option value="date_desc">Più recenti</option>
-                    <option value="date_asc">Più vecchie</option>
-                </select>
+                <Popover.Root>
+                    <Popover.Trigger>
+                        {#snippet child({ props })}
+                            <Button
+                                {...props}
+                                variant="outline"
+                                class="w-44 justify-between font-normal"
+                                aria-label="Ordina per data"
+                            >
+                                {sortKey === "date_desc"
+                                    ? "Più recenti"
+                                    : "Più vecchie"}
+                                <ChevronDownIcon />
+                            </Button>
+                        {/snippet}
+                    </Popover.Trigger>
+                    <Popover.Content class="w-[220px] p-0" align="start">
+                        <Command.Root>
+                            <Command.List>
+                                <Command.Group value="ordina">
+                                    <Command.Item
+                                        value="Più recenti"
+                                        onSelect={() => {
+                                            sortKey = "date_desc";
+                                        }}
+                                    >
+                                        Più recenti
+                                    </Command.Item>
+                                    <Command.Item
+                                        value="Più vecchie"
+                                        onSelect={() => {
+                                            sortKey = "date_asc";
+                                        }}
+                                    >
+                                        Più vecchie
+                                    </Command.Item>
+                                </Command.Group>
+                            </Command.List>
+                        </Command.Root>
+                    </Popover.Content>
+                </Popover.Root>
             </div>
         </div>
 

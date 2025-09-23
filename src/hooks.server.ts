@@ -1,4 +1,3 @@
-// src/hooks.server.ts
 import { createServerClient } from '@supabase/ssr';
 import { type Handle, redirect } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
@@ -6,7 +5,6 @@ import { randomUUID } from 'node:crypto';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
 
 const supabase: Handle = async ({ event, resolve }) => {
-  // client SSR legato ai cookie richiesta
   event.locals.supabase = createServerClient(
     PUBLIC_SUPABASE_URL,
     PUBLIC_SUPABASE_PUBLISHABLE_KEY,
@@ -22,7 +20,6 @@ const supabase: Handle = async ({ event, resolve }) => {
     }
   );
 
-  // helper sicuro: valida il JWT con getUser prima di restituire session
   event.locals.safeGetSession = async () => {
     const { data: { user }, error } = await event.locals.supabase.auth.getUser();
     if (error || !user) return { session: null, user: null };
@@ -30,7 +27,6 @@ const supabase: Handle = async ({ event, resolve }) => {
     return { session, user };
   };
 
-  // token anonimo per voto da non autenticati (1 token per browser)
   let voterToken = event.cookies.get('vtr');
   if (!voterToken) {
     voterToken = randomUUID();
@@ -54,7 +50,6 @@ const authGuard: Handle = async ({ event, resolve }) => {
   event.locals.session = session;
   event.locals.user = user;
 
-  // NB: redirect va "lanciato" (throw), non solo chiamato
   if (!session && event.url.pathname.startsWith('/private')) {
     throw redirect(303, '/auth');
   }

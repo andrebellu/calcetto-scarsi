@@ -1,4 +1,3 @@
-// src/routes/api/fixture/by-poll/[poll_id]/confirm/+server.ts
 import { json, error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { mulberry32, shuffle } from "$lib/utils/random";
