@@ -1,11 +1,15 @@
-<script>
+<script lang="ts">
   import Badge from "$lib/Badge/Badge.svelte";
+  import HomeCard from "$lib/HomeCard/HomeCard.svelte";
+  import { homeCards } from "$lib/homeCardsData";
+
   export let data;
 </script>
 
 <div
   class="min-h-dvh flex flex-col items-center justify-center bg-transparent px-4 py-6 md:py-10"
 >
+  <!-- 🔹 Header -->
   <div class="mb-6 md:mb-10 text-center">
     <h1
       class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight"
@@ -17,12 +21,10 @@
     <div
       class="flex justify-center mt-3 md:mt-4 gap-2 md:gap-3 items-center flex-wrap"
     >
-      <div class="relative">
-        <Badge
-          content={`${data.playersCount} giocatori`}
-          redContent={`${data.tempPlayersCount} temp`}
-        />
-      </div>
+      <Badge
+        content={`${data.playersCount} giocatori`}
+        redContent={`${data.tempPlayersCount} temp`}
+      />
       <Badge content={`${data.totalMatches} partite`} redContent={0} />
       <Badge content={`${data.totalGoals} gol`} redContent={0} />
     </div>
@@ -51,123 +53,44 @@
   <div
     class="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-8 w-full max-w-6xl px-0 md:px-12"
   >
-    <!-- Giocatori -->
-    <a
-      href="/players"
-      class="group block rounded-2xl md:rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-primary-300 hover:border-primary-400 transition-all p-4 md:p-8 text-center overflow-hidden backdrop-blur-md hover:scale-[1.01] min-h-28"
-    >
-      <span
-        class="material-symbols-outlined text-4xl md:text-6xl text-primary-400 mb-1 md:mb-2 transition"
-        >apparel</span
-      >
-      <h2 class="text-lg md:text-2xl font-bold text-surface-900 mb-0.5 md:mb-1">
-        Giocatori
-      </h2>
-      <p class="text-surface-600 mb-2 hidden sm:block">Gestisci giocatori</p>
-      <div
-        class="mt-1 md:mt-2 text-primary-500 font-semibold group-hover:underline text-sm md:text-base"
-      >
-        Vai ai giocatori →
-      </div>
-    </a>
+    {#each homeCards as card}
+      <HomeCard {...card}>
+        Vai a {card.title.toLowerCase()} →
+      </HomeCard>
+    {/each}
 
-    <!-- Partite -->
-    <a
-      href="/matches"
-      class="group block rounded-2xl md:rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-primary-300 hover:border-primary-400 transition-all p-4 md:p-8 text-center overflow-hidden backdrop-blur-md hover:scale-[1.01] min-h-28"
-    >
-      <span
-        class="material-symbols-outlined text-5xl md:text-8xl text-primary-400 mb-1 md:mb-2 transition"
-        >sports_soccer</span
-      >
-      <h2 class="text-lg md:text-2xl font-bold text-surface-900 mb-0.5 md:mb-1">
-        Partite
-      </h2>
-      <p class="text-surface-600 mb-2 hidden sm:block">Gestisci partite</p>
-      <div
-        class="mt-1 md:mt-2 text-primary-500 font-semibold group-hover:underline text-sm md:text-base"
-      >
-        Vai a partite →
-      </div>
-    </a>
-
-    <!-- Statistiche -->
-    <a
-      href="/stats"
-      class="group block rounded-2xl md:rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-primary-300 hover:border-primary-400 transition-all p-4 md:p-8 text-center overflow-hidden backdrop-blur-md hover:scale-[1.01] min-h-28"
-    >
-      <span
-        class="material-symbols-outlined text-5xl md:text-8xl text-secondary-400 mb-1 md:mb-2 transition"
-        >bar_chart</span
-      >
-      <h2 class="text-lg md:text-2xl font-bold text-surface-900 mb-0.5 md:mb-1">
-        Statistiche
-      </h2>
-      <p class="text-surface-600 mb-2 hidden sm:block">
-        Risultati e statistiche giocatori
-      </p>
-      <div
-        class="mt-1 md:mt-2 text-secondary-500 font-semibold group-hover:underline text-sm md:text-base"
-      >
-        Vai alle statistiche →
-      </div>
-    </a>
-
-    <!-- Sondaggio / Prossima partita -->
-    <!-- Sondaggio / Ultima convocazione -->
     {#if data.dataDecisa && data.prossimaPartita}
-      <div
-        class="group block rounded-2xl md:rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-primary-300 hover:border-primary-400 transition-all p-4 md:p-8 text-center overflow-hidden backdrop-blur-md min-h-28"
+      <HomeCard
+        title={data.prossimaPartita.luogo}
+        description={`Prossima partita: ${new Date(
+          data.prossimaPartita.data
+        ).toLocaleDateString("it-IT", {
+          weekday: "long",
+          day: "2-digit",
+          month: "long",
+        })} alle ${data.prossimaPartita.ora}`}
+        icon="stadium"
+        link="/planned"
+        color="secondary"
+        highlight={true}
       >
-        <span
-          class="material-symbols-outlined text-5xl md:text-8xl text-secondary-400 mb-1 md:mb-2 transition"
-          >stadium</span
-        >
-        <h2 class="text-lg md:2xl font-bold text-surface-900 mb-0.5 md:mb-1">
-          {data.prossimaPartita.luogo}
-        </h2>
-        <p class="text-surface-600 mb-2 hidden sm:block">
-          Prossima partita: {data.prossimaPartita.data} alle {data
-            .prossimaPartita.ora}
-        </p>
-
-        <!-- Link sempre visibile per tutti -->
-        <div
-          class="mt-1 md:mt-2 text-secondary-500 font-semibold group-hover:underline text-sm md:text-base"
-        >
-          <a href="/planned">Vedi convocazioni →</a>
-        </div>
-
-        <!-- Link admin opzionale -->
+        <a href="/planned">Vedi convocazioni →</a>
         {#if data.isAuthenticated}
-          <div
-            class="mt-1 text-primary-500 font-semibold group-hover:underline text-sm md:text-base"
-          >
+          <div class="mt-1 text-primary-500 font-semibold text-sm md:text-base">
             <a href="/poll">Crea nuovo sondaggio →</a>
           </div>
         {/if}
-      </div>
+      </HomeCard>
     {:else}
-      <a
-        href="/poll"
-        class="group block rounded-2xl md:rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-primary-300 hover:border-primary-400 transition-all p-4 md:p-8 text-center overflow-hidden backdrop-blur-md hover:scale-[1.01] min-h-28"
+      <HomeCard
+        title="Sondaggio"
+        description="Vota per la prossima partita"
+        icon="poll"
+        link="/poll"
+        color="secondary"
       >
-        <span
-          class="material-symbols-outlined text-5xl md:text-8xl text-secondary-400 mb-1 md:mb-2 transition"
-          >poll</span
-        >
-        <h2 class="text-lg md:2xl font-bold text-surface-900 mb-0.5 md:mb-1">
-          Sondaggio
-        </h2>
-        <p class="text-surface-600 mb-2 hidden sm:block">
-          Vota per la prossima partita
-        </p>
-        <div
-          class="mt-1 md:mt-2 text-secondary-500 font-semibold group-hover:underline text-sm md:text-base"
-        >
-          Vai al sondaggio →
-        </div>
-      </a>
+        Vai al sondaggio →
+      </HomeCard>
     {/if}
   </div>
 </div>

@@ -92,27 +92,48 @@
   ) {
     if (!poll_id || busyId !== null) return;
     busyId = option_id;
-    const base = `/api/poll/${poll_id}/vote`;
 
-    const res = checked
-      ? await fetch(base, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            option_id,
-            choice: "yes",
-            player_id: chosenPlayerId,
-          }),
-        })
-      : await fetch(`${base}?option_id=${option_id}`, {
-          method: "DELETE",
-        });
+    try {
+      const base = `/api/poll/${poll_id}/vote`;
+      const res = checked
+        ? await fetch(base, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              option_id,
+              choice: "yes",
+              player_id: chosenPlayerId,
+            }),
+          })
+        : await fetch(`${base}?option_id=${option_id}`, { method: "DELETE" });
 
-    busyId = null;
-    if (!res.ok) return;
-    if (checked) votedSet.add(option_id);
-    else votedSet.delete(option_id);
-    location.reload();
+      if (!res.ok) {
+        toast.error("Errore nel voto");
+        return;
+      }
+
+      // ✅ aggiorna lo stato in modo reattivo
+      if (checked) {
+        votedSet.add(option_id);
+        data.counts = {
+          ...data.counts,
+          [option_id]: (data.counts[option_id] ?? 0) + 1,
+        };
+        toast.success("Voto aggiunto!");
+      } else {
+        votedSet.delete(option_id);
+        data.counts = {
+          ...data.counts,
+          [option_id]: Math.max(0, (data.counts[option_id] ?? 1) - 1),
+        };
+        toast.success("Voto rimosso");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Errore di connessione");
+    } finally {
+      busyId = null;
+    }
   }
 
   const itWeekday = new Intl.DateTimeFormat("it-IT", { weekday: "long" });
@@ -237,6 +258,33 @@
     teamsByPoll[poll_id].P = (teamsByPoll[poll_id].P ?? []).filter(
       (v) => v.player_id !== player_id
     );
+  }
+
+  function removeFromAllTeams(poll_id: number, player_id: string) {
+    ensureTeams(poll_id);
+    teamsByPoll[poll_id].A = teamsByPoll[poll_id].A.filter(
+      (v) => v.player_id !== player_id
+    );
+    teamsByPoll[poll_id].B = teamsByPoll[poll_id].B.filter(
+      (v) => v.player_id !== player_id
+    );
+    teamsByPoll[poll_id].P = teamsByPoll[poll_id].P.filter(
+      (v) => v.player_id !== player_id
+    );
+  }
+
+  function removeToAvailable(poll_id: number, player: Voter) {
+    ensureTeams(poll_id);
+    removeFromAllTeams(poll_id, player.player_id);
+
+    // Evita duplicati nei disponibili
+    const current = votersByPoll[poll_id] ?? [];
+    if (!current.find((v) => v.player_id === player.player_id)) {
+      votersByPoll = {
+        ...votersByPoll,
+        [poll_id]: [...current, player],
+      };
+    }
   }
 
   // sposta un player nella destinazione scelta
@@ -767,19 +815,8 @@
                       stroke: "none",
                       radius: 5,
                       rounded: "all",
-                      initialWidth: 0,
-                      initialX: 0,
                       motion: {
-                        x: {
-                          type: "tween",
-                          duration: 500,
-                          easing: cubicInOut,
-                        },
-                        width: {
-                          type: "tween",
-                          duration: 500,
-                          easing: cubicInOut,
-                        },
+                        width: { type: "spring", stiffness: 80, damping: 20 },
                       },
                     },
                     highlight: { area: { fill: "none" } },
@@ -794,7 +831,6 @@
                   }}
                 >
                   {#snippet tooltip()}
-                    <!-- Mostra l'etichetta completa nel tooltip -->
                     <Chart.Tooltip labelKey="label" hideLabel={false} />
                   {/snippet}
                 </BarChart>
@@ -892,8 +928,8 @@
                   >
                     <span>{v.name}</span>
                     <button
-                      onclick={() =>
-                        removeEverywhere(recent.poll_id, v.player_id)}
+                      class="text-xs px-2 py-1 border rounded"
+                      onclick={() => removeToAvailable(recent.poll_id, v)}
                     >
                       X
                     </button>
@@ -917,8 +953,8 @@
                   >
                     <span>{v.name}</span>
                     <button
-                      onclick={() =>
-                        removeEverywhere(recent.poll_id, v.player_id)}
+                      class="text-xs px-2 py-1 border rounded"
+                      onclick={() => removeToAvailable(recent.poll_id, v)}
                     >
                       X
                     </button>
