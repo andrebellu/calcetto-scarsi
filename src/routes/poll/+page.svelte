@@ -31,7 +31,7 @@
       option_id: number;
       match_date: string | null;
       luogo: string | null;
-      start_time: string | null;
+      time_of_day: string | null;
       note: string | null;
     }>;
     counts: Record<number, number>;
@@ -147,16 +147,12 @@
       .map((opt) => {
         const dt = opt.match_date ? new Date(opt.match_date) : null;
         const dayName = dt ? itWeekday.format(dt) : "";
-        const startTimeNoSeconds = opt.start_time
-          ? opt.start_time.slice(0, 5)
-          : "";
+        const timeLabel = opt.time_of_day ?? "";
         const dayShort = dt ? itDate.format(dt) : (opt.match_date ?? "");
-        const labelFull = [dayName, dayShort, startTimeNoSeconds]
+        const labelFull = [dayName, dayShort, timeLabel]
           .filter(Boolean)
           .join(" • ");
-        const labelShort = [dayShort, startTimeNoSeconds]
-          .filter(Boolean)
-          .join(" "); // es. "24/09 20:30"
+        const labelShort = [dayShort, timeLabel].filter(Boolean).join(" "); // es. "24/09 20:30"
         return {
           label: labelFull || opt.luogo || `Opzione ${opt.option_id}`,
           labelShort: labelShort || opt.luogo || `Opzione ${opt.option_id}`,
@@ -440,7 +436,7 @@
           <input
             class="border rounded-lg px-2 py-2"
             type="time"
-            bind:value={opt.start_time}
+            bind:value={opt.time_of_day}
           />
         </div>
 
@@ -696,90 +692,96 @@
         </div>
 
         <!-- Lista opzioni -->
-        <section class="space-y-3" class:hidden={recent.status === "closed"}>
+        <section
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          class:hidden={recent.status === "closed"}
+        >
           {#each data.options as opt}
             {@const dt = opt.match_date ? new Date(opt.match_date) : null}
             {@const dayName = dt ? itWeekday.format(dt) : ""}
             {@const dayShort = dt ? itDate.format(dt) : (opt.match_date ?? "")}
-            {@const startTimeNoSeconds = opt.start_time
-              ? opt.start_time.slice(0, 5)
-              : ""}
 
-            <label class="flex items-center gap-3 p-3 rounded-xl border">
-              <input
-                type="checkbox"
-                checked={votedSet.has(opt.option_id)}
-                disabled={recent.status !== "open" ||
-                  busyId === opt.option_id ||
-                  !chosenPlayerId}
-                onchange={(e) =>
-                  toggleVote(
-                    recent.poll_id,
-                    opt.option_id,
-                    (e.currentTarget as HTMLInputElement).checked
-                  )}
-              />
-              <div class="flex-1">
-                <div class="font-semibold">
-                  {opt.luogo} • {dayName}
-                  {dayShort} • {opt.start_time
-                    ? startTimeNoSeconds
-                    : "Orario non definito"}
+            {@const emoji =
+              opt.time_of_day === "Mattina"
+                ? "☀️"
+                : opt.time_of_day === "Pomeriggio"
+                  ? "🌤️"
+                  : opt.time_of_day === "Sera"
+                    ? "🌙"
+                    : "🕓"}
+
+            <label
+              class="flex flex-col gap-2 border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
+            >
+              <div class="flex items-start justify-between">
+                <div class="flex flex-col">
+                  <div class="font-semibold text-xl sm:text-lg">
+                    {dayName}, {dayShort}
+                  </div>
+                  <div class="text-lg text-muted-foreground">
+                    {opt.time_of_day ?? "Orario non definito"}
+                    {emoji}
+                  </div>
+                  <div class="text-xs text-muted-foreground">
+                    {opt.luogo ?? "Luogo N/D"}
+                  </div>
+                  {#if opt.note}
+                    <div class="text-xs text-muted-foreground mt-1">
+                      {opt.note}
+                    </div>
+                  {/if}
                 </div>
-                {#if opt.note}
-                  <div class="text-sm text-muted-foreground">
-                    {opt.note}
-                  </div>
-                {/if}
-              </div>
-              <div class="text-sm text-gray-700 shrink-0">
-                Voti: {data.counts[opt.option_id] ?? 0}
-              </div>
-            </label>
 
-            {#if (data.counts[opt.option_id] ?? 0) > 0}
-              <Collapsible.Root class="w-full space-y-2">
-                <div class="grid items-center justify-between space-x-4">
-                  <div
-                    class="flex flex-inverse-row items-center justify-start gap-2"
-                  >
-                    <Collapsible.Trigger
-                      class={buttonVariants({
-                        variant: "ghost",
-                        size: "sm",
-                        class: "w-36 p-0",
-                      })}
-                      onclick={() =>
-                        loadVotersForOption(recent.poll_id, opt.option_id)}
-                    >
-                      <h4 class="text-sm font-semibold">Dettagli votanti</h4>
-                      <ChevronsUpDown />
-                      <span class="sr-only">Toggle</span>
-                    </Collapsible.Trigger>
-                  </div>
+                <input
+                  type="checkbox"
+                  checked={votedSet.has(opt.option_id)}
+                  disabled={recent.status !== "open" ||
+                    busyId === opt.option_id ||
+                    !chosenPlayerId}
+                  onchange={(e) =>
+                    toggleVote(
+                      recent.poll_id,
+                      opt.option_id,
+                      (e.currentTarget as HTMLInputElement).checked
+                    )}
+                  class="size-5 accent-primary-600"
+                />
+              </div>
 
-                  <Collapsible.Content
-                    class="space-y-2 pt-2 flex flex-wrap gap-2"
+              <div class="text-xs mt-1 text-right text-gray-600">
+                🗳️ {data.counts[opt.option_id] ?? 0} voti
+              </div>
+
+              <!-- Dettagli votanti (collapsible) -->
+              {#if (data.counts[opt.option_id] ?? 0) > 0}
+                <Collapsible.Root class="w-full space-y-1">
+                  <Collapsible.Trigger
+                    class="text-xs text-primary-600 hover:underline"
+                    onclick={() =>
+                      loadVotersForOption(recent.poll_id, opt.option_id)}
                   >
+                    Mostra votanti
+                  </Collapsible.Trigger>
+                  <Collapsible.Content class="flex flex-wrap gap-1 mt-1">
                     {#if votersByOption[opt.option_id]?.loading}
-                      <div class="py-2 text-sm">Caricamento…</div>
+                      <div class="text-xs text-muted-foreground">
+                        Caricamento…
+                      </div>
                     {:else if votersByOption[opt.option_id]?.list?.length}
                       {#each votersByOption[opt.option_id].list as v (v.player_id)}
-                        <div
-                          class="rounded-md border px-4 py-3 font-mono text-sm h-12 flex items-center justify-center"
+                        <span class="border rounded px-2 py-1 text-xs"
+                          >{v.name}</span
                         >
-                          {v.name}
-                        </div>
                       {/each}
                     {:else}
-                      <div class="py-2 text-sm text-muted-foreground">
+                      <div class="text-xs text-muted-foreground">
                         Nessun votante
                       </div>
                     {/if}
                   </Collapsible.Content>
-                </div></Collapsible.Root
-              >
-            {/if}
+                </Collapsible.Root>
+              {/if}
+            </label>
           {/each}
         </section>
 

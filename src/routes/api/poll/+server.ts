@@ -10,7 +10,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
   const body = await request.json();
   const { title, options } = body as {
     title: string;
-    options: Array<{ match_date: string; luogo: string; start_time: string; note?: string }>;
+    options: Array<{ match_date: string; luogo: string; time_of_day: string; note?: string }>;
   };
 
   const { data: newPoll, error: pollErr } = await supabase
@@ -24,7 +24,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
     poll_id: newPoll.poll_id,
     match_date: o.match_date,
     luogo: o.luogo,
-    start_time: o.start_time,
+    time_of_day: o.time_of_day,
     note: o.note ?? null
   }));
   if (rows.length) {

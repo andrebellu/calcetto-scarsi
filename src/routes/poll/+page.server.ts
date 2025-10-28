@@ -69,7 +69,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
   // 2) opzioni
   const { data: options } = await supabase
     .from("poll_option")
-    .select("option_id, match_date, luogo, start_time, note")
+    .select("option_id, match_date, luogo, time_of_day, note")
     .eq("poll_id", poll.poll_id)
     .order("match_date", { ascending: true });
 
