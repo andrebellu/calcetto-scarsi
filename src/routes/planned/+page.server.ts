@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   // ultima convocazione confermata
   const { data: fx, error: fxErr } = await supabase
     .from('fixture')
-    .select('fixture_id, poll_id, match_date, luogo, start_time, status, created_at')
+    .select('fixture_id, poll_id, match_date, luogo, time_of_day, status, created_at')
     .eq('status', 'confirmed')
     .order('created_at', { ascending: false })
     .order('fixture_id', { ascending: false })
@@ -42,7 +42,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
   const prossimaPartita = {
     data: fx.match_date,
-    ora: fx.start_time,
+    ora: fx.time_of_day,
     luogo: fx.luogo,
     fixture_id: fx.fixture_id,
     poll_id: fx.poll_id

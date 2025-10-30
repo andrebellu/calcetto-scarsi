@@ -68,7 +68,7 @@
           weekday: "long",
           day: "2-digit",
           month: "long",
-        })} alle ${data.prossimaPartita.ora}`}
+        })} di ${data.prossimaPartita.ora}`}
         icon="stadium"
         link="/planned"
         color="secondary"

@@ -6,7 +6,6 @@ export const POST = async ({ request, locals }) => {
     poll_id: body.poll_id,
     match_date: body.match_date,
     luogo: body.luogo,
-    start_time: body.start_time,
     status: 'draft'
   }).select('fixture_id').single();
   if (e) throw error(500, e.message);

@@ -45,7 +45,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       if (!winnerOptionId) {
         const { data: options, error: optErr } = await supabase
           .from("poll_option")
-          .select("option_id, match_date, start_time, luogo")
+          .select("option_id, match_date, time_of_day, luogo")
           .eq("poll_id", poll_id);
         if (optErr) throw optErr;
         if (!options?.length) throw error(400, "No options for this poll");
@@ -67,8 +67,8 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
           const da = a.match_date ?? "";
           const db = b.match_date ?? "";
           if (da !== db) return da < db ? -1 : 1;
-          const ta = a.start_time ?? "";
-          const tb = b.start_time ?? "";
+          const ta = a.time_of_day ?? "";
+          const tb = b.time_of_day ?? "";
           if (ta !== tb) return ta < tb ? -1 : 1;
           return a.option_id - b.option_id;
         });
@@ -78,7 +78,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
 
       const { data: picked, error: pickErr } = await supabase
         .from("poll_option")
-        .select("match_date, luogo, start_time")
+        .select("match_date, luogo, time_of_day")
         .eq("poll_id", poll_id)
         .eq("option_id", winnerOptionId!)
         .maybeSingle();
@@ -90,7 +90,6 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
           poll_id,
           match_date: picked.match_date,
           luogo: picked.luogo,
-          start_time: picked.start_time,
           status: "confirmed", // direttamente stato ammesso
           locked_at: new Date().toISOString(),
         })

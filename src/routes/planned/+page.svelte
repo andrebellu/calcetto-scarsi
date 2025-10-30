@@ -36,7 +36,9 @@
           Prossima partita:
           <span class="font-semibold">{partita.luogo}</span>
           • <span class="font-semibold">{partita.data}</span>
-          alle <span class="font-semibold">{partita.ora}</span>
+        </p>
+        <p class="text-xs text-surface-500">
+          Orario da definire sul gruppo WhatsApp.
         </p>
         <p class="text-sm text-surface-500">
           Ricordarsi di arrivare <span class="font-semibold">30 min</span> prima.

@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
   const { data: latestFixture, error: fxErr } = await supabase
     .from('fixture')
-    .select('fixture_id, poll_id, match_date, luogo, start_time, status, created_at')
+    .select('fixture_id, poll_id, match_date, luogo, time_of_day, status, created_at')
     .eq('status', 'confirmed')
     .gte('match_date', today)
     .order('match_date', { ascending: true })
@@ -54,7 +54,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     latestFixture && !hasNewerPoll
       ? {
           data: latestFixture.match_date,
-          ora: latestFixture.start_time,
+          ora: latestFixture.time_of_day,
           luogo: latestFixture.luogo,
           poll_id: latestFixture.poll_id,
           fixture_id: latestFixture.fixture_id,
