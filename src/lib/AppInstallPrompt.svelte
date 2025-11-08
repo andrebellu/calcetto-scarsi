@@ -32,10 +32,10 @@
 
     const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
     if (isIOS && !isAppInstalled()) {
-        toast.info(
+      toast.info(
         "📱 Per installare Calcetto Scarsi su iOS: apri il menu Condividi → Aggiungi alla schermata Home",
         { duration: 7000 }
-        );
+      );
     }
 
     if (isAppInstalled()) {

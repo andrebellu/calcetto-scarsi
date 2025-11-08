@@ -7,7 +7,7 @@
 		ref = $bindable(null),
 		class: className,
 		value,
-		onchange,
+		on:change,
 		...restProps
 	} = $props();
 </script>
@@ -20,7 +20,7 @@
 >
 	<CalendarPrimitive.MonthSelect bind:ref class="absolute inset-0 opacity-0" {...restProps}>
 		{#snippet child({ props, monthItems, selectedMonthItem })}
-			<select {...props} {value} {onchange}>
+			<select {...props} {value} {on:change}>
 				{#each monthItems as monthItem (monthItem.value)}
 					<option
 						value={monthItem.value}

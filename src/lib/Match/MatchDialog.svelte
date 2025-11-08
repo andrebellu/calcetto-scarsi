@@ -314,7 +314,7 @@
                   {#each freeOptions as opt (opt.value)}
                     <Command.Item
                       value={opt.label}
-                      on:select={() => selectForBlue(opt.value)}
+                      onSelect={() => selectForBlue(opt.value)}
                     >
                       <CheckIcon
                         class={cn(
@@ -354,7 +354,7 @@
                   {#each freeOptions as opt (opt.value)}
                     <Command.Item
                       value={opt.label}
-                      on:select={() => selectForRed(opt.value)}
+                      onSelect={() => selectForRed(opt.value)}
                     >
                       <CheckIcon
                         class={cn(
@@ -448,7 +448,7 @@
             Squadra Rossi
           </label>
           <div
-            class="relative min-h=[220px] sm:min-h-[260px] max-h-[260px] overflow-y-auto pr-2 box-border border border-neutral-200 dark:border-neutral-800 rounded-2xl p-2 mb-2 grid gap-2 grid-cols-[repeat(auto-fill,minmax(128px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] auto-rows-[92px] bg-white dark:bg-neutral-900 no-scrollbar"
+            class="relative min-h=[220px] sm:min-h-[260px] max-h-[260px] overflow-y-auto pr-2 box-border border border-neutral-200 dark:border-neutral-800 rounded-2xl p-2 mb-2 grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(128px,1fr))] sm:[grid-template-columns:repeat(auto-fill,minmax(140px,1fr))] [grid-auto-rows:92px] bg-white dark:bg-neutral-900 no-scrollbar"
             style="touch-action: pan-y;"
           >
             {#each redPlayers as player (player.id)}
@@ -514,7 +514,7 @@
         <Dialog.Close
           ><Button variant="destructive">Annulla</Button></Dialog.Close
         >
-        <Button on:click={submitMatch} disabled={!canSubmit() || saving}>
+        <Button onclick={submitMatch} disabled={!canSubmit() || saving}>
           {saving ? "Salvataggio..." : "Salva partita"}
         </Button>
       </Dialog.Footer>
