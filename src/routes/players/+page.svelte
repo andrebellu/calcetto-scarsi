@@ -149,7 +149,7 @@
         class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all hover:bg-primary hover:text-white"
         class:bg-primary={showFixed}
         class:text-white={showFixed}
-        on:click={() => (showFixed = !showFixed)}
+        onclick={() => (showFixed = !showFixed)}
         aria-pressed={showFixed}
       >
         {showFixed ? "Mostra fissi ✓" : "Mostra fissi"}
@@ -160,7 +160,7 @@
         class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all hover:bg-primary hover:text-white"
         class:bg-primary={showTemporary}
         class:text-white={showTemporary}
-        on:click={() => (showTemporary = !showTemporary)}
+        onclick={() => (showTemporary = !showTemporary)}
         aria-pressed={showTemporary}
       >
         {showTemporary ? "Mostra temporanei ✓" : "Mostra temporanei"}

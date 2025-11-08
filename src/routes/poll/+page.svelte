@@ -450,7 +450,7 @@
             <button
               type="button"
               class="px-3 py-2 border rounded-lg"
-              on:click={() => removeRow(i)}
+              onclick={() => removeRow(i)}
             >
               −
             </button>
@@ -462,14 +462,14 @@
         <button
           class="px-3 py-2 border rounded-lg"
           type="button"
-          on:click={addRow}
+          onclick={addRow}
         >
           + Aggiungi orario
         </button>
 
         <button
           class="px-4 py-2 rounded-lg text-white bg-primary-600 disabled:opacity-60 w-full sm:w-auto"
-          on:click={createPoll}
+          onclick={createPoll}
           disabled={busy || !title || newOptions.length === 0}
         >
           Crea sondaggio
@@ -526,7 +526,7 @@
                       class={buttonVariants({
                         variant: "destructive",
                       })}
-                      on:click={() => closePoll(recent.poll_id)}
+                      onclick={() => closePoll(recent.poll_id)}
                     >
                       Conferma chiusura
                     </AlertDialog.Action>
@@ -543,7 +543,7 @@
             {#if isLogged}
               <button
                 class={buttonVariants({ variant: "default" })}
-                on:click={async () => {
+                onclick={async () => {
                   setTab?.(recent.poll_id, "squadre");
                   await loadVoters?.(recent.poll_id);
                 }}
@@ -574,7 +574,7 @@
             id={`tab-voto-${recent.poll_id}`}
             class="px-3 py-1.5 rounded-md text-sm border data-[active=true]:bg-primary-600 data-[active=true]:text-white"
             data-active={getTab?.(recent.poll_id) === "voto"}
-            on:click={() => setTab?.(recent.poll_id, "voto")}
+            onclick={() => setTab?.(recent.poll_id, "voto")}
           >
             Votazione
           </button>
@@ -585,7 +585,7 @@
             id={`tab-squadre-${recent.poll_id}`}
             class="px-3 py-1.5 rounded-md text-sm border data-[active=true]:bg-primary-600 data-[active=true]:text-white"
             data-active={getTab?.(recent.poll_id) === "squadre"}
-            on:click={async () => {
+            onclick={async () => {
               setTab?.(recent.poll_id, "squadre");
               await loadVoters?.(recent.poll_id);
             }}
@@ -670,7 +670,7 @@
                       class={buttonVariants({
                         variant: "default",
                       })}
-                      on:click={confirmPlayerFinal}
+                      onclick={confirmPlayerFinal}
                     >
                       Conferma
                     </AlertDialog.Action>
@@ -738,7 +738,7 @@
                   disabled={recent.status !== "open" ||
                     busyId === opt.option_id ||
                     !chosenPlayerId}
-                  on:change={(e) =>
+                  onchange={(e) =>
                     toggleVote(
                       recent.poll_id,
                       opt.option_id,
@@ -757,7 +757,7 @@
                 <Collapsible.Root class="w-full space-y-1">
                   <Collapsible.Trigger
                     class="text-xs text-primary-600 hover:underline"
-                    on:click={() =>
+                    onclick={() =>
                       loadVotersForOption(recent.poll_id, opt.option_id)}
                   >
                     Mostra votanti
@@ -866,13 +866,13 @@
           <div class="flex flex-wrap items-center gap-2">
             <button
               class={buttonVariants({ variant: "outline" })}
-              on:click={() => loadVoters(recent.poll_id)}
+              onclick={() => loadVoters(recent.poll_id)}
             >
               Carica votanti
             </button>
             <button
               class={buttonVariants({ variant: "default" })}
-              on:click={() => confirmFixture(recent.poll_id)}
+              onclick={() => confirmFixture(recent.poll_id)}
             >
               Conferma convocati
             </button>
@@ -896,12 +896,12 @@
                     <div class="flex gap-1">
                       <button
                         class="text-xs px-2 py-1 border rounded"
-                        on:click={() => moveTo?.(v, "A", recent.poll_id)}
+                        onclick={() => moveTo?.(v, "A", recent.poll_id)}
                         >A</button
                       >
                       <button
                         class="text-xs px-2 py-1 border rounded"
-                        on:click={() => moveTo?.(v, "B", recent.poll_id)}
+                        onclick={() => moveTo?.(v, "B", recent.poll_id)}
                         >B</button
                       >
                     </div>
@@ -931,7 +931,7 @@
                     <span>{v.name}</span>
                     <button
                       class="text-xs px-2 py-1 border rounded"
-                      on:click={() => removeToAvailable(recent.poll_id, v)}
+                      onclick={() => removeToAvailable(recent.poll_id, v)}
                     >
                       X
                     </button>
@@ -956,7 +956,7 @@
                     <span>{v.name}</span>
                     <button
                       class="text-xs px-2 py-1 border rounded"
-                      on:click={() => removeToAvailable(recent.poll_id, v)}
+                      onclick={() => removeToAvailable(recent.poll_id, v)}
                     >
                       X
                     </button>
