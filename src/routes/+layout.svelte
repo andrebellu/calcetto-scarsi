@@ -57,7 +57,6 @@
 
 <ModeWatcher />
 
+{@render children()}
 <Toaster position="bottom-center" />
 <AppInstallPrompt />
-
-{@render children()}
