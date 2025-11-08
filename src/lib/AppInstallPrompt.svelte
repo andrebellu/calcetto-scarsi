@@ -27,52 +27,38 @@
     );
   }
 
- onMount(() => {
-  console.log("AppInstallPrompt montato ✅");
+  onMount(() => {
+    console.log("AppInstallPrompt montato ✅");
 
-  const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-  if (isIOS && !isAppInstalled()) {
-    toast.info(
-      "📱 Per installare Calcetto Scarsi su iPhone/iPad: apri il menu Condividi → Aggiungi alla schermata Home",
-      { duration: 7000 }
-    );
-  }
-
-  if (isAppInstalled()) {
-    console.log("PWA già installata, niente prompt");
-    return;
-  }
-
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-
-    if ($page.url.pathname === "/") {
-      showInstall = true;
-
-      toast.info("Vuoi installare Calcetto Scarsi?", {
-        action: {
-          label: "Installa",
-          onClick: installApp,
-        },
-        duration: 8000,
-      });
+    const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    if (isIOS && !isAppInstalled()) {
+        toast.info(
+        "📱 Per installare Calcetto Scarsi su iOS: apri il menu Condividi → Aggiungi alla schermata Home",
+        { duration: 7000 }
+        );
     }
-  });
 
-  window.addEventListener("appinstalled", () => {
-    toast.success("App installata con successo 🎉");
-    deferredPrompt = null;
-    showInstall = false;
-  });
-
-  unsubscribe = page.subscribe(($p) => {
-    if ($p.url.pathname !== "/") {
-      toast.dismiss();
-      showInstall = false;
+    if (isAppInstalled()) {
+      console.log("PWA già installata, niente prompt");
+      return;
     }
-  });
-});
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+
+      if ($page.url.pathname === "/") {
+        showInstall = true;
+
+        toast.info("Vuoi installare Calcetto Scarsi?", {
+          action: {
+            label: "Installa",
+            onClick: installApp,
+          },
+          duration: 8000,
+        });
+      }
+    });
 
     window.addEventListener("appinstalled", () => {
       toast.success("App installata con successo 🎉");
