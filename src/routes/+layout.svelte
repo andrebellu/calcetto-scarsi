@@ -7,6 +7,8 @@
   import { page } from "$app/stores";
   import { asset } from "$app/paths";
   import { pwaInfo } from 'virtual:pwa-info';
+  import { Toaster } from 'svelte-sonner';
+  import AppInstallPrompt from '$lib/AppInstallPrompt.svelte';
 
   let { data, children } = $props();
   let { session, supabase } = $derived(data);
@@ -54,5 +56,8 @@
 {/if}
 
 <ModeWatcher />
+
+<Toaster position="bottom-center" />
+<AppInstallPrompt />
 
 {@render children()}
