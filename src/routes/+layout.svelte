@@ -6,6 +6,7 @@
   import "../app.css";
   import { page } from "$app/stores";
   import { asset } from "$app/paths";
+  import { pwaInfo } from 'virtual:pwa-info';
 
   let { data, children } = $props();
   let { session, supabase } = $derived(data);
@@ -15,11 +16,27 @@
       if (newSession?.expires_at !== session?.expires_at) {
         invalidate("supabase:auth");
       }
+
+      if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => console.log('SW registrato', reg))
+        .catch(err => console.error('Errore registrazione SW', err));
+    }
     });
 
     return () => data.subscription.unsubscribe();
   });
+
+
+
+  let webManifestLink = pwaInfo ? pwaInfo.webManifest.linkTag : '';
 </script>
+
+
+<svelte:head>
+  {@html webManifestLink}
+</svelte:head>
+
 
 {#if $page.url.pathname == "/"}
   <div class="fixed inset-0 -z-10 w-screen h-screen">
