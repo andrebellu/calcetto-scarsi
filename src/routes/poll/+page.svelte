@@ -6,6 +6,7 @@
   import * as Chart from "$lib/components/ui/chart/index.js";
   import * as Card from "$lib/components/ui/card/index.js";
   import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
+  import * as Dialog from "$lib/components/ui/dialog/index.js";
   import { buttonVariants } from "$lib/components/ui/button/index.js";
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
@@ -13,6 +14,11 @@
   import Badge from "$lib/components/ui/badge/badge.svelte";
   import * as Collapsible from "$lib/components/ui/collapsible/index.js";
   import ChevronsUpDown from "@lucide/svelte/icons/chevrons-up-down";
+  import Plus from "@lucide/svelte/icons/plus";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
+  import CalendarIcon from "@lucide/svelte/icons/calendar";
+  import MapPin from "@lucide/svelte/icons/map-pin";
+  import Clock from "@lucide/svelte/icons/clock";
   import { Toaster, toast } from "svelte-sonner";
 
   onMount(() => {
@@ -46,7 +52,7 @@
   let msg = $state<string | null>(null);
   let busyId = $state<number | null>(null);
   const votedSet = $derived(
-    new Set((data.myVotes ?? []).map((v) => v.option_id))
+    new Set((data.myVotes ?? []).map((v) => v.option_id)),
   );
 
   // stato creazione sondaggio
@@ -54,15 +60,18 @@
   type NewOpt = {
     match_date: string;
     luogo: string;
-    start_time: string;
+    time_of_day: string;
     note?: string;
   };
   let newOptions = $state<NewOpt[]>([
-    { match_date: "", luogo: "", start_time: "" },
+    { match_date: "", luogo: "", time_of_day: "" },
   ]);
 
   function addRow() {
-    newOptions = [...newOptions, { match_date: "", luogo: "", start_time: "" }];
+    newOptions = [
+      ...newOptions,
+      { match_date: "", luogo: "", time_of_day: "" },
+    ];
   }
   function removeRow(i: number) {
     newOptions = newOptions.filter((_, idx) => idx !== i);
@@ -88,7 +97,7 @@
   async function toggleVote(
     poll_id: number,
     option_id: number,
-    checked: boolean
+    checked: boolean,
   ) {
     if (!poll_id || busyId !== null) return;
     busyId = option_id;
@@ -159,7 +168,7 @@
           value: data.counts[opt.option_id] ?? 0,
         };
       })
-      .filter((d) => d.value > 0)
+      .filter((d) => d.value > 0),
   );
 
   const chartConfig = {
@@ -243,29 +252,29 @@
   function removeEverywhere(poll_id: number, player_id: string) {
     ensureTeams(poll_id);
     votersByPoll[poll_id] = (votersByPoll[poll_id] ?? []).filter(
-      (v) => v.player_id !== player_id
+      (v) => v.player_id !== player_id,
     );
     teamsByPoll[poll_id].A = (teamsByPoll[poll_id].A ?? []).filter(
-      (v) => v.player_id !== player_id
+      (v) => v.player_id !== player_id,
     );
     teamsByPoll[poll_id].B = (teamsByPoll[poll_id].B ?? []).filter(
-      (v) => v.player_id !== player_id
+      (v) => v.player_id !== player_id,
     );
     teamsByPoll[poll_id].P = (teamsByPoll[poll_id].P ?? []).filter(
-      (v) => v.player_id !== player_id
+      (v) => v.player_id !== player_id,
     );
   }
 
   function removeFromAllTeams(poll_id: number, player_id: string) {
     ensureTeams(poll_id);
     teamsByPoll[poll_id].A = teamsByPoll[poll_id].A.filter(
-      (v) => v.player_id !== player_id
+      (v) => v.player_id !== player_id,
     );
     teamsByPoll[poll_id].B = teamsByPoll[poll_id].B.filter(
-      (v) => v.player_id !== player_id
+      (v) => v.player_id !== player_id,
     );
     teamsByPoll[poll_id].P = teamsByPoll[poll_id].P.filter(
-      (v) => v.player_id !== player_id
+      (v) => v.player_id !== player_id,
     );
   }
 
@@ -330,7 +339,7 @@
   // prepara il payload DnD
   function handleDragStart(
     e: DragEvent,
-    v: Voter & { is_goalkeeper?: boolean }
+    v: Voter & { is_goalkeeper?: boolean },
   ) {
     e.dataTransfer?.setData("application/json", JSON.stringify(v));
     if (e.dataTransfer) {
@@ -401,83 +410,232 @@
       };
     }
   }
+
+  function generateTeams(poll_id: number) {
+    ensureTeams(poll_id);
+    // Raccogli tutti i giocatori (disponibili + A + B)
+    const all = [
+      ...(votersByPoll[poll_id] ?? []),
+      ...(teamsByPoll[poll_id].A ?? []),
+      ...(teamsByPoll[poll_id].B ?? []),
+    ];
+
+    // Shuffle
+    for (let i = all.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [all[i], all[j]] = [all[j], all[i]];
+    }
+
+    // Dividi
+    const mid = Math.ceil(all.length / 2);
+    const teamA = all.slice(0, mid);
+    const teamB = all.slice(mid);
+
+    // Aggiorna stato
+    votersByPoll[poll_id] = [];
+    teamsByPoll = {
+      ...teamsByPoll,
+      [poll_id]: {
+        ...teamsByPoll[poll_id],
+        A: teamA,
+        B: teamB,
+      },
+    };
+    toast.success("Squadre generate casualmente");
+  }
+
+  function generateWeek() {
+    const today = new Date();
+    // Calcola il prossimo Lunedì
+    const nextMonday = new Date(today);
+    nextMonday.setDate(today.getDate() + ((1 + 7 - today.getDay()) % 7 || 7));
+
+    const opts: NewOpt[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(nextMonday);
+      d.setDate(nextMonday.getDate() + i);
+      const dateStr = d.toISOString().split("T")[0];
+      const day = d.getDay(); // 0=Dom, 6=Sab
+
+      if (day === 0 || day === 6) {
+        // Sabato o Domenica: Mattina, Pomeriggio, Sera
+        opts.push({
+          match_date: dateStr,
+          luogo: "",
+          time_of_day: "Mattina",
+        });
+        opts.push({
+          match_date: dateStr,
+          luogo: "",
+          time_of_day: "Pomeriggio",
+        });
+        opts.push({
+          match_date: dateStr,
+          luogo: "",
+          time_of_day: "Sera",
+        });
+      } else {
+        // Feriale: solo Sera
+        opts.push({
+          match_date: dateStr,
+          luogo: "",
+          time_of_day: "Sera",
+        });
+      }
+    }
+    newOptions = opts;
+    toast.success("Settimana generata!");
+  }
 </script>
 
 <div class="mx-auto max-w-3xl pt-4 sm:pt-6 px-3 sm:px-6">
-  <Button href="/">Torna alla home</Button>
+  <Button href="/" class="" disabled={false}>Torna alla home</Button>
 </div>
 
 <Toaster position="top-center" richColors />
 
 {#if data.isLogged}
-  <div class="mx-auto max-w-3xl p-4 sm:p-6 space-y-4 sm:space-y-6">
-    <h2 class="text-lg sm:text-xl font-bold mb-2 sm:mb-3">
-      Crea nuovo sondaggio
-    </h2>
-    <div class="space-y-3 sm:space-y-4">
-      <input
-        class="w-full border rounded-lg px-3 py-2"
-        placeholder="Titolo"
-        bind:value={title}
-      />
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 flex justify-end">
+    <Dialog.Root>
+      <Dialog.Trigger class={buttonVariants({ variant: "default" })}>
+        <Plus class="mr-2 size-4" />
+        Nuovo Sondaggio
+      </Dialog.Trigger>
+      <Dialog.Content
+        class="max-w-2xl max-h-[90vh] overflow-y-auto"
+        portalProps={undefined}
+      >
+        <Dialog.Header class="">
+          <Dialog.Title class="">Crea nuovo sondaggio</Dialog.Title>
+          <Dialog.Description class="">
+            Configura le opzioni per il prossimo match.
+          </Dialog.Description>
+        </Dialog.Header>
 
-      {#each newOptions as opt, i}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-          <input
-            class="border rounded-lg px-2 py-2"
-            type="date"
-            bind:value={opt.match_date}
-          />
-          <input
-            class="border rounded-lg px-2 py-2"
-            placeholder="Luogo"
-            bind:value={opt.luogo}
-          />
-          <input
-            class="border rounded-lg px-2 py-2"
-            type="time"
-            bind:value={opt.time_of_day}
-          />
-        </div>
+        <div class="space-y-4 py-4">
+          <div class="space-y-2">
+            <label for="title" class="text-sm font-medium">Titolo</label>
+            <input
+              id="title"
+              class="w-full border rounded-lg px-3 py-2"
+              placeholder="Es. Partita di Venerdì"
+              bind:value={title}
+            />
+          </div>
 
-        <div class="flex flex-col sm:flex-row gap-2">
-          <input
-            class="flex-1 border rounded-lg px-2 py-2"
-            placeholder="Note (opzionali)"
-            bind:value={opt.note}
-          />
-          {#if newOptions.length > 1}
-            <button
-              type="button"
-              class="px-3 py-2 border rounded-lg"
-              onclick={() => removeRow(i)}
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium">Opzioni di voto</span>
+              <div class="flex gap-2">
+                <button
+                  class="text-xs text-primary-600 hover:underline flex items-center gap-1"
+                  type="button"
+                  onclick={generateWeek}
+                >
+                  <CalendarIcon class="size-3" /> Genera Settimana
+                </button>
+                <button
+                  class="text-xs text-primary-600 hover:underline flex items-center gap-1"
+                  type="button"
+                  onclick={addRow}
+                >
+                  <Plus class="size-3" /> Aggiungi
+                </button>
+              </div>
+            </div>
+
+            {#each newOptions as opt, i}
+              <div
+                class="border rounded-lg p-3 space-y-3 bg-muted/30 relative group"
+              >
+                {#if newOptions.length > 1}
+                  <button
+                    type="button"
+                    class="absolute top-2 right-2 p-1 text-muted-foreground hover:text-destructive transition-colors"
+                    onclick={() => removeRow(i)}
+                    title="Rimuovi opzione"
+                  >
+                    <Trash2 class="size-4" />
+                  </button>
+                {/if}
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label
+                      class="text-xs text-muted-foreground flex items-center gap-1"
+                    >
+                      <CalendarIcon class="size-3" /> Data
+                    </label>
+                    <input
+                      class="w-full border rounded-md px-2 py-1.5 text-sm"
+                      type="date"
+                      bind:value={opt.match_date}
+                    />
+                  </div>
+                  <div class="space-y-1">
+                    <label
+                      class="text-xs text-muted-foreground flex items-center gap-1"
+                    >
+                      <Clock class="size-3" /> Fascia Oraria
+                    </label>
+                    <select
+                      class="w-full border rounded-md px-2 py-1.5 text-sm bg-background"
+                      bind:value={opt.time_of_day}
+                    >
+                      <option value="" disabled>Seleziona...</option>
+                      <option value="Mattina">Mattina</option>
+                      <option value="Pomeriggio">Pomeriggio</option>
+                      <option value="Sera">Sera</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label
+                      class="text-xs text-muted-foreground flex items-center gap-1"
+                    >
+                      <MapPin class="size-3" /> Luogo
+                    </label>
+                    <input
+                      class="w-full border rounded-md px-2 py-1.5 text-sm"
+                      placeholder="Es. Campo Sportivo"
+                      bind:value={opt.luogo}
+                    />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-xs text-muted-foreground">Note</label>
+                    <input
+                      class="w-full border rounded-md px-2 py-1.5 text-sm"
+                      placeholder="Es. Sintetico"
+                      bind:value={opt.note}
+                    />
+                  </div>
+                </div>
+              </div>
+            {/each}
+          </div>
+
+          {#if msg}
+            <div
+              class="p-3 rounded-md bg-destructive/10 text-destructive text-sm"
             >
-              −
-            </button>
+              {msg}
+            </div>
           {/if}
         </div>
-      {/each}
 
-      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-        <button
-          class="px-3 py-2 border rounded-lg"
-          type="button"
-          onclick={addRow}
-        >
-          + Aggiungi orario
-        </button>
-
-        <button
-          class="px-4 py-2 rounded-lg text-white bg-primary-600 disabled:opacity-60 w-full sm:w-auto"
-          onclick={createPoll}
-          disabled={busy || !title || newOptions.length === 0}
-        >
-          Crea sondaggio
-        </button>
-      </div>
-
-      {#if msg}<p class="text-sm mt-1">{msg}</p>{/if}
-    </div>
+        <Dialog.Footer class="">
+          <Button
+            class=""
+            onclick={createPoll}
+            disabled={busy || !title || newOptions.length === 0}
+          >
+            {busy ? "Creazione..." : "Crea Sondaggio"}
+          </Button>
+        </Dialog.Footer>
+      </Dialog.Content>
+    </Dialog.Root>
   </div>
 {/if}
 
@@ -504,17 +662,17 @@
                   {closing ? "Chiusura..." : "Chiudi sondaggio"}
                 </AlertDialog.Trigger>
 
-                <AlertDialog.Content class="max-w-md">
-                  <AlertDialog.Header>
-                    <AlertDialog.Title>
+                <AlertDialog.Content class="max-w-md" portalProps={undefined}>
+                  <AlertDialog.Header class="">
+                    <AlertDialog.Title class="">
                       Chiudere definitivamente il sondaggio?
                     </AlertDialog.Title>
-                    <AlertDialog.Description>
+                    <AlertDialog.Description class="">
                       L’azione finalizza il sondaggio e imposta lo stato a
                       "closed". Operazione irreversibile.
                     </AlertDialog.Description>
                   </AlertDialog.Header>
-                  <AlertDialog.Footer>
+                  <AlertDialog.Footer class="">
                     <AlertDialog.Cancel
                       class={buttonVariants({
                         variant: "outline",
@@ -539,7 +697,9 @@
 
         {#if recent.status === "closed"}
           <div class="flex items-center gap-2">
-            <Badge class="bg-red-100 text-red-700">Sondaggio chiuso</Badge>
+            <Badge class="bg-red-100 text-red-700" href={undefined}
+              >Sondaggio chiuso</Badge
+            >
             {#if isLogged}
               <button
                 class={buttonVariants({ variant: "default" })}
@@ -557,7 +717,9 @@
             Per votare seleziona uno o più giorni disponibili; un secondo clic
             sulla stessa data rimuove il voto.
           </p>
-          <Badge class="bg-green-100 text-green-700">Sondaggio aperto</Badge>
+          <Badge class="bg-green-100 text-green-700" href={undefined}
+            >Sondaggio aperto</Badge
+          >
         {/if}
       </header>
 
@@ -600,189 +762,279 @@
         role="tabpanel"
         id={`panel-voto-${recent.poll_id}`}
         aria-labelledby={`tab-voto-${recent.poll_id}`}
-        class="space-y-3"
+        class="space-y-6"
         hidden={getTab?.(recent.poll_id) !== "voto"}
       >
+        <!-- Sezione Selezione Giocatore -->
         <div
-          class="rounded-2xl border p-3 sm:p-4 space-y-3"
+          class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden"
           class:hidden={recent.status === "closed"}
         >
-          <div class="flex items-center justify-between">
-            <h3 class="text-base sm:text-lg font-semibold">Giocatore</h3>
-            {#if chosenPlayerId}
-              <span
-                class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700"
-                >bloccato</span
+          <div class="p-4 sm:p-6 bg-muted/20 border-b">
+            <h3 class="font-semibold flex items-center gap-2">
+              <div
+                class="flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary text-xs"
               >
-            {/if}
+                1
+              </div>
+              Chi sei?
+            </h3>
+            <p class="text-sm text-muted-foreground mt-1 ml-8">
+              Seleziona il tuo nome per registrare i voti.
+            </p>
           </div>
 
-          {#if !chosenPlayerId}
-            <div class="flex flex-col sm:flex-row gap-2">
-              <select
-                class="border rounded-lg px-3 py-2 w-full sm:flex-1"
-                bind:value={tempPlayerId}
+          <div class="p-4 sm:p-6">
+            {#if !chosenPlayerId}
+              <div
+                class="flex flex-col sm:flex-row gap-3 items-end sm:items-center"
               >
-                <option value="" disabled>Seleziona giocatore…</option>
-                {#each players as p}
-                  <option value={p.player_id} class="text-black"
-                    >{p.name}</option
+                <div class="w-full sm:flex-1 space-y-1.5">
+                  <label for="player-select" class="text-sm font-medium"
+                    >Giocatore</label
                   >
-                {/each}
-              </select>
-
-              <AlertDialog.Root>
-                <AlertDialog.Trigger
-                  class={buttonVariants({
-                    variant: "default",
-                  })}
-                  disabled={!tempPlayerId || tempPlayerId.length === 0}
-                >
-                  Conferma
-                </AlertDialog.Trigger>
-
-                <AlertDialog.Content class="max-w-md">
-                  <AlertDialog.Header>
-                    <AlertDialog.Title
-                      >Confermare il giocatore?</AlertDialog.Title
-                    >
-                    <AlertDialog.Description>
-                      Questa scelta sarà <span class="font-bold"
-                        >definitiva</span
+                  <select
+                    id="player-select"
+                    class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    bind:value={tempPlayerId}
+                  >
+                    <option value="" disabled>Seleziona dalla lista...</option>
+                    {#each players as p}
+                      <option value={p.player_id} class="text-black"
+                        >{p.name}</option
                       >
-                      per questo sondaggio e non potrà essere modificata.
-                      <br /><br />
-                      <span class="font-bold">
-                        Si chiede di votare solo con il proprio giocatore e
-                        solamente da un dispositivo.
-                      </span>
-                    </AlertDialog.Description>
-                  </AlertDialog.Header>
-                  <AlertDialog.Footer>
-                    <AlertDialog.Cancel
-                      class={buttonVariants({
-                        variant: "outline",
-                      })}
-                    >
-                      Annulla
-                    </AlertDialog.Cancel>
-                    <AlertDialog.Action
-                      class={buttonVariants({
-                        variant: "default",
-                      })}
-                      onclick={confirmPlayerFinal}
-                    >
-                      Conferma
-                    </AlertDialog.Action>
-                  </AlertDialog.Footer>
-                </AlertDialog.Content>
-              </AlertDialog.Root>
-            </div>
+                    {/each}
+                  </select>
+                </div>
 
-            <p class="text-xs text-muted-foreground">
-              La scelta è definitiva per questo sondaggio.
-            </p>
-          {:else if chosenPlayerId}
-            <p class="text-sm">
-              Giocatore selezionato: {players.find(
-                (p) => p.player_id === chosenPlayerId
-              )?.name ?? "N/D"}
-            </p>
-          {:else if recent.status === "closed"}{/if}
+                <AlertDialog.Root>
+                  <AlertDialog.Trigger
+                    class={buttonVariants({
+                      variant: "default",
+                    })}
+                    disabled={!tempPlayerId || tempPlayerId.length === 0}
+                  >
+                    Conferma Identità
+                  </AlertDialog.Trigger>
+
+                  <AlertDialog.Content class="max-w-md" portalProps={undefined}>
+                    <AlertDialog.Header class="">
+                      <AlertDialog.Title class=""
+                        >Confermi di essere {players.find(
+                          (p) => p.player_id === tempPlayerId,
+                        )?.name}?</AlertDialog.Title
+                      >
+                      <AlertDialog.Description class="">
+                        Questa scelta è necessaria per votare e non potrà essere
+                        modificata facilmente.
+                      </AlertDialog.Description>
+                    </AlertDialog.Header>
+                    <AlertDialog.Footer class="">
+                      <AlertDialog.Cancel
+                        class={buttonVariants({
+                          variant: "outline",
+                        })}
+                      >
+                        Annulla
+                      </AlertDialog.Cancel>
+                      <AlertDialog.Action
+                        class={buttonVariants({
+                          variant: "default",
+                        })}
+                        onclick={confirmPlayerFinal}
+                      >
+                        Conferma
+                      </AlertDialog.Action>
+                    </AlertDialog.Footer>
+                  </AlertDialog.Content>
+                </AlertDialog.Root>
+              </div>
+            {:else}
+              <div
+                class="flex items-center gap-3 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-100"
+              >
+                <div
+                  class="size-8 rounded-full bg-green-200 flex items-center justify-center text-green-800 font-bold"
+                >
+                  {players
+                    .find((p) => p.player_id === chosenPlayerId)
+                    ?.name.charAt(0)}
+                </div>
+                <div class="flex-1">
+                  <p class="font-medium">
+                    Stai votando come <span class="font-bold"
+                      >{players.find((p) => p.player_id === chosenPlayerId)
+                        ?.name}</span
+                    >
+                  </p>
+                </div>
+                <Badge
+                  variant="outline"
+                  class="bg-white text-green-700 border-green-200"
+                  href={undefined}>Identificato</Badge
+                >
+              </div>
+            {/if}
+          </div>
         </div>
 
         <!-- Lista opzioni -->
-        <section
-          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-          class:hidden={recent.status === "closed"}
-        >
-          {#each data.options as opt}
-            {@const dt = opt.match_date ? new Date(opt.match_date) : null}
-            {@const dayName = dt ? itWeekday.format(dt) : ""}
-            {@const dayShort = dt ? itDate.format(dt) : (opt.match_date ?? "")}
-
-            {@const emoji =
-              opt.time_of_day === "Mattina"
-                ? "☀️"
-                : opt.time_of_day === "Pomeriggio"
-                  ? "🌤️"
-                  : opt.time_of_day === "Sera"
-                    ? "🌙"
-                    : "🕓"}
-
-            <label
-              class="flex flex-col gap-2 border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
+        <section class:hidden={recent.status === "closed"} class="space-y-4">
+          <div class="flex items-center gap-2 px-1">
+            <div
+              class="flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary text-xs font-bold"
             >
-              <div class="flex items-start justify-between">
-                <div class="flex flex-col">
-                  <div class="font-semibold text-xl sm:text-lg">
-                    {dayName}, {dayShort}
-                  </div>
-                  <div class="text-lg text-muted-foreground">
-                    {opt.time_of_day ?? "Orario non definito"}
-                    {emoji}
-                  </div>
-                  <div class="text-xs text-muted-foreground">
-                    {opt.luogo ?? "Luogo N/D"}
-                  </div>
-                  {#if opt.note}
-                    <div class="text-xs text-muted-foreground mt-1">
-                      {opt.note}
+              2
+            </div>
+            <h3 class="font-semibold">Esprimi le tue preferenze</h3>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {#each data.options as opt}
+              {@const dt = opt.match_date ? new Date(opt.match_date) : null}
+              {@const dayName = dt ? itWeekday.format(dt) : ""}
+              {@const dayShort = dt
+                ? itDate.format(dt)
+                : (opt.match_date ?? "")}
+              {@const isSelected = votedSet.has(opt.option_id)}
+
+              {@const emoji =
+                opt.time_of_day === "Mattina"
+                  ? "☀️"
+                  : opt.time_of_day === "Pomeriggio"
+                    ? "🌤️"
+                    : opt.time_of_day === "Sera"
+                      ? "🌙"
+                      : "🕓"}
+
+              <label
+                class="relative flex flex-col gap-3 border rounded-xl p-5 shadow-sm transition-all cursor-pointer hover:border-primary/50 {isSelected
+                  ? 'bg-primary/5 border-primary ring-1 ring-primary'
+                  : 'bg-card hover:bg-muted/50'}"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="flex flex-col">
+                    <div class="font-bold text-lg capitalize">
+                      {dayName}
+                      <span class="font-normal text-muted-foreground text-base"
+                        >| {dayShort}</span
+                      >
                     </div>
-                  {/if}
-                </div>
+                    <div
+                      class="flex items-center gap-1.5 text-base font-medium mt-1"
+                    >
+                      <span>{emoji}</span>
+                      <span>{opt.time_of_day ?? "Orario non definito"}</span>
+                    </div>
 
-                <input
-                  type="checkbox"
-                  checked={votedSet.has(opt.option_id)}
-                  disabled={recent.status !== "open" ||
-                    busyId === opt.option_id ||
-                    !chosenPlayerId}
-                  onchange={(e) =>
-                    toggleVote(
-                      recent.poll_id,
-                      opt.option_id,
-                      (e.currentTarget as HTMLInputElement).checked
-                    )}
-                  class="size-5 accent-primary-600"
-                />
-              </div>
-
-              <div class="text-xs mt-1 text-right text-gray-600">
-                🗳️ {data.counts[opt.option_id] ?? 0} voti
-              </div>
-
-              <!-- Dettagli votanti (collapsible) -->
-              {#if (data.counts[opt.option_id] ?? 0) > 0}
-                <Collapsible.Root class="w-full space-y-1">
-                  <Collapsible.Trigger
-                    class="text-xs text-primary-600 hover:underline"
-                    onclick={() =>
-                      loadVotersForOption(recent.poll_id, opt.option_id)}
-                  >
-                    Mostra votanti
-                  </Collapsible.Trigger>
-                  <Collapsible.Content class="flex flex-wrap gap-1 mt-1">
-                    {#if votersByOption[opt.option_id]?.loading}
-                      <div class="text-xs text-muted-foreground">
-                        Caricamento…
-                      </div>
-                    {:else if votersByOption[opt.option_id]?.list?.length}
-                      {#each votersByOption[opt.option_id].list as v (v.player_id)}
-                        <span class="border rounded px-2 py-1 text-xs"
-                          >{v.name}</span
-                        >
-                      {/each}
-                    {:else}
-                      <div class="text-xs text-muted-foreground">
-                        Nessun votante
+                    {#if opt.luogo}
+                      <div
+                        class="flex items-center gap-1.5 text-xs text-muted-foreground mt-2"
+                      >
+                        <MapPin class="size-3.5" />
+                        {opt.luogo}
                       </div>
                     {/if}
-                  </Collapsible.Content>
-                </Collapsible.Root>
-              {/if}
-            </label>
-          {/each}
+
+                    {#if opt.note}
+                      <div
+                        class="text-xs text-muted-foreground mt-1 bg-muted px-2 py-1 rounded inline-block self-start"
+                      >
+                        {opt.note}
+                      </div>
+                    {/if}
+                  </div>
+
+                  <div class="relative">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      disabled={recent.status !== "open" ||
+                        busyId === opt.option_id ||
+                        !chosenPlayerId}
+                      onchange={(e) =>
+                        toggleVote(
+                          recent.poll_id,
+                          opt.option_id,
+                          (e.currentTarget as HTMLInputElement).checked,
+                        )}
+                      class="peer sr-only"
+                    />
+                    <div
+                      class="size-6 rounded-full border-2 border-muted-foreground peer-checked:border-primary peer-checked:bg-primary transition-all flex items-center justify-center"
+                    >
+                      {#if isSelected}
+                        <svg
+                          class="size-3.5 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          stroke-width="3"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      {/if}
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  class="pt-3 mt-auto border-t flex items-center justify-between"
+                >
+                  <div class="text-xs font-medium text-muted-foreground">
+                    {#if (data.counts[opt.option_id] ?? 0) === 0}
+                      Nessun voto
+                    {:else}
+                      <span class="text-primary font-bold"
+                        >{data.counts[opt.option_id]}</span
+                      > voti
+                    {/if}
+                  </div>
+
+                  <!-- Dettagli votanti (collapsible) -->
+                  {#if (data.counts[opt.option_id] ?? 0) > 0}
+                    <Collapsible.Root class="">
+                      <Collapsible.Trigger
+                        class="text-xs text-primary hover:underline flex items-center gap-1"
+                        onclick={() => {
+                          loadVotersForOption(recent.poll_id, opt.option_id);
+                        }}
+                      >
+                        Vedi chi
+                        <ChevronsUpDown class="size-3" />
+                      </Collapsible.Trigger>
+                      <Collapsible.Content
+                        class="absolute left-0 right-0 top-full z-10 mt-1 p-2 bg-popover border rounded-lg shadow-lg mx-2"
+                      >
+                        <div class="flex flex-wrap gap-1">
+                          {#if votersByOption[opt.option_id]?.loading}
+                            <div class="text-xs text-muted-foreground p-1">
+                              Caricamento…
+                            </div>
+                          {:else if votersByOption[opt.option_id]?.list?.length}
+                            {#each votersByOption[opt.option_id].list as v (v.player_id)}
+                              <span
+                                class="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-[10px] font-medium"
+                                >{v.name}</span
+                              >
+                            {/each}
+                          {:else}
+                            <div class="text-xs text-muted-foreground p-1">
+                              Nessun votante
+                            </div>
+                          {/if}
+                        </div>
+                      </Collapsible.Content>
+                    </Collapsible.Root>
+                  {/if}
+                </div>
+              </label>
+            {/each}
+          </div>
         </section>
 
         <!-- Grafico riepilogo -->
@@ -833,7 +1085,16 @@
                   }}
                 >
                   {#snippet tooltip()}
-                    <Chart.Tooltip labelKey="label" hideLabel={false} />
+                    <Chart.Tooltip
+                      labelKey="label"
+                      hideLabel={false}
+                      class=""
+                      label=""
+                      labelClassName=""
+                      formatter={undefined}
+                      nameKey=""
+                      color=""
+                    />
                   {/snippet}
                 </BarChart>
               </Chart.Container>
@@ -871,6 +1132,12 @@
               Carica votanti
             </button>
             <button
+              class={buttonVariants({ variant: "secondary" })}
+              onclick={() => generateTeams(recent.poll_id)}
+            >
+              Genera Squadre
+            </button>
+            <button
               class={buttonVariants({ variant: "default" })}
               onclick={() => confirmFixture(recent.poll_id)}
             >
@@ -878,92 +1145,141 @@
             </button>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Disponibili -->
-            <div>
-              <h4 class="font-semibold mb-2">Disponibili</h4>
-              <ul
-                class="space-y-1 border rounded-md p-2 min-h-40"
-                ondrop={(e) => handleDrop?.(e, "available", recent.poll_id)}
-              >
-                {#each votersByPoll[recent.poll_id] ?? [] as v (v.player_id)}
-                  <li
-                    draggable="true"
-                    ondragstart={(e) => handleDragStart?.(e, v)}
-                    class="flex items-center justify-between gap-2 px-2 py-1 rounded hover:bg-muted/40"
-                  >
-                    <span>{v.name}</span>
-                    <div class="flex gap-1">
-                      <button
-                        class="text-xs px-2 py-1 border rounded"
-                        onclick={() => moveTo?.(v, "A", recent.poll_id)}
-                        >A</button
+            <Card.Root class="border-dashed">
+              <Card.Header class="pb-3">
+                <Card.Title class="text-base font-medium"
+                  >Disponibili</Card.Title
+                >
+              </Card.Header>
+              <Card.Content class="">
+                <ul
+                  class="space-y-2 min-h-[200px]"
+                  ondrop={(e) => handleDrop?.(e, "available", recent.poll_id)}
+                  ondragover={(e) => e.preventDefault()}
+                >
+                  {#each votersByPoll[recent.poll_id] ?? [] as v (v.player_id)}
+                    <li
+                      draggable="true"
+                      ondragstart={(e) => handleDragStart?.(e, v)}
+                      class="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50 border hover:bg-muted cursor-grab active:cursor-grabbing"
+                    >
+                      <span class="font-medium text-sm text-foreground"
+                        >{v.name}</span
                       >
-                      <button
-                        class="text-xs px-2 py-1 border rounded"
-                        onclick={() => moveTo?.(v, "B", recent.poll_id)}
-                        >B</button
-                      >
-                    </div>
-                  </li>
-                {/each}
-                {#if !(votersByPoll[recent.poll_id] ?? []).length}
-                  <li class="text-sm text-muted-foreground">
-                    Nessun votante caricato
-                  </li>
-                {/if}
-              </ul>
-            </div>
+                      <div class="flex gap-1">
+                        <button
+                          class="size-6 flex items-center justify-center rounded bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold"
+                          onclick={() => moveTo?.(v, "A", recent.poll_id)}
+                          title="Sposta in A"
+                        >
+                          A
+                        </button>
+                        <button
+                          class="size-6 flex items-center justify-center rounded bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold"
+                          onclick={() => moveTo?.(v, "B", recent.poll_id)}
+                          title="Sposta in B"
+                        >
+                          B
+                        </button>
+                      </div>
+                    </li>
+                  {/each}
+                  {#if !(votersByPoll[recent.poll_id] ?? []).length}
+                    <li
+                      class="flex flex-col items-center justify-center h-full text-sm text-muted-foreground italic"
+                    >
+                      Trascina qui i giocatori
+                    </li>
+                  {/if}
+                </ul>
+              </Card.Content>
+            </Card.Root>
 
             <!-- Squadra A -->
-            <div>
-              <h4 class="font-semibold mb-2">Squadra A</h4>
-              <ul
-                class="space-y-1 border rounded-md p-2 min-h-40"
-                ondrop={(e) => handleDrop?.(e, "A", recent.poll_id)}
-              >
-                {#each teamsByPoll?.[recent.poll_id]?.A ?? [] as v (v.player_id)}
-                  <li
-                    draggable="true"
-                    ondragstart={(e) => handleDragStart?.(e, v)}
-                    class="flex items-center justify-between gap-2 px-2 py-1 rounded hover:bg-muted/40"
-                  >
-                    <span>{v.name}</span>
-                    <button
-                      class="text-xs px-2 py-1 border rounded"
-                      onclick={() => removeToAvailable(recent.poll_id, v)}
+            <Card.Root class="bg-blue-50/50 border-blue-100">
+              <Card.Header class="pb-3">
+                <Card.Title class="text-base font-medium text-blue-700"
+                  >Squadra A</Card.Title
+                >
+              </Card.Header>
+              <Card.Content class="">
+                <ul
+                  class="space-y-2 min-h-[200px]"
+                  ondrop={(e) => handleDrop?.(e, "A", recent.poll_id)}
+                  ondragover={(e) => e.preventDefault()}
+                >
+                  {#each teamsByPoll?.[recent.poll_id]?.A ?? [] as v (v.player_id)}
+                    <li
+                      draggable="true"
+                      ondragstart={(e) => handleDragStart?.(e, v)}
+                      class="flex items-center justify-between gap-2 p-2 rounded-md bg-white border shadow-sm cursor-grab active:cursor-grabbing"
                     >
-                      X
-                    </button>
-                  </li>
-                {/each}
-              </ul>
-            </div>
+                      <span class="font-medium text-sm text-black"
+                        >{v.name}</span
+                      >
+                      <button
+                        class="size-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        onclick={() => removeToAvailable(recent.poll_id, v)}
+                        title="Rimuovi"
+                      >
+                        <Trash2 class="size-3.5" />
+                      </button>
+                    </li>
+                  {/each}
+                  {#if !(teamsByPoll?.[recent.poll_id]?.A ?? []).length}
+                    <li
+                      class="flex flex-col items-center justify-center h-full text-sm text-muted-foreground italic"
+                    >
+                      Trascina qui i giocatori
+                    </li>
+                  {/if}
+                </ul>
+              </Card.Content>
+            </Card.Root>
 
             <!-- Squadra B -->
-            <div>
-              <h4 class="font-semibold mb-2">Squadra B</h4>
-              <ul
-                class="space-y-1 border rounded-md p-2 min-h-40"
-                ondrop={(e) => handleDrop?.(e, "B", recent.poll_id)}
-              >
-                {#each teamsByPoll?.[recent.poll_id]?.B ?? [] as v (v.player_id)}
-                  <li
-                    draggable="true"
-                    ondragstart={(e) => handleDragStart?.(e, v)}
-                    class="flex items-center justify-between gap-2 px-2 py-1 rounded hover:bg-muted/40"
-                  >
-                    <span>{v.name}</span>
-                    <button
-                      class="text-xs px-2 py-1 border rounded"
-                      onclick={() => removeToAvailable(recent.poll_id, v)}
+            <Card.Root class="bg-orange-50/50 border-orange-100">
+              <Card.Header class="pb-3">
+                <Card.Title class="text-base font-medium text-orange-700"
+                  >Squadra B</Card.Title
+                >
+              </Card.Header>
+              <Card.Content class="">
+                <ul
+                  class="space-y-2 min-h-[200px]"
+                  ondrop={(e) => handleDrop?.(e, "B", recent.poll_id)}
+                  ondragover={(e) => e.preventDefault()}
+                >
+                  {#each teamsByPoll?.[recent.poll_id]?.B ?? [] as v (v.player_id)}
+                    <li
+                      draggable="true"
+                      ondragstart={(e) => handleDragStart?.(e, v)}
+                      class="flex items-center justify-between gap-2 p-2 rounded-md bg-white border shadow-sm cursor-grab active:cursor-grabbing"
                     >
-                      X
-                    </button>
-                  </li>
-                {/each}
-              </ul>
-            </div>
+                      <span class="font-medium text-sm text-black"
+                        >{v.name}</span
+                      >
+                      <button
+                        class="size-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        onclick={() => removeToAvailable(recent.poll_id, v)}
+                        title="Rimuovi"
+                      >
+                        <Trash2 class="size-3.5" />
+                      </button>
+                    </li>
+                  {/each}
+                  {#if !(teamsByPoll?.[recent.poll_id]?.B ?? []).length}
+                    <li
+                      class="flex flex-col items-center justify-center h-full text-sm text-muted-foreground italic"
+                    >
+                      Trascina qui i giocatori
+                    </li>
+                  {/if}
+                </ul>
+              </Card.Content>
+            </Card.Root>
           </div>
         </div>
       {/if}
