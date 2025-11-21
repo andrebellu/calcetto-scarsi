@@ -4,21 +4,35 @@
   import Navbar from "$lib/Navbar/Navbar.svelte";
   import { fade } from "svelte/transition";
   import { flip } from "svelte/animate";
+  import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
 
   const { data } = $props<{
-    isAuthenticated: boolean;
-    players: Array<{
-      name: string;
-      is_temporary: boolean;
-      goals: number;
-      wins: number;
-      matchesPlayed: number;
-      winRate: number;
-      golPerMatch: number;
-    }>;
+    data: {
+      isAuthenticated: boolean;
+      streamed: {
+        players: Promise<
+          Array<{
+            name: string;
+            is_temporary: boolean;
+            goals: number;
+            wins: number;
+            matchesPlayed: number;
+            winRate: number;
+            golPerMatch: number;
+          }>
+        >;
+      };
+    };
   }>();
 
   let isAuthenticated = data.isAuthenticated;
+  let players = $state<any[]>([]);
+
+  $effect(() => {
+    data.streamed.players.then((res) => {
+      players = res || [];
+    });
+  });
 
   let query = $state("");
   let debounced = $state("");
@@ -27,7 +41,7 @@
 
   let t: any;
   $effect(() => {
-    const q = query; // registra la dipendenza sincrona
+    const q = query;
     clearTimeout(t);
     t = setTimeout(() => (debounced = q), 250);
     return () => clearTimeout(t);
@@ -36,19 +50,19 @@
   const qLower = $derived(debounced.trim().toLowerCase());
 
   const fixedPlayers = $derived(
-    (data.players || []).filter((p) => {
+    players.filter((p) => {
       if (p.is_temporary) return false;
       if (!qLower) return true;
       return (p.name || "").toLowerCase().includes(qLower);
-    })
+    }),
   );
 
   const tempPlayers = $derived(
-    (data.players || []).filter((p) => {
+    players.filter((p) => {
       if (!p.is_temporary) return false;
       if (!qLower) return true;
       return (p.name || "").toLowerCase().includes(qLower);
-    })
+    }),
   );
 </script>
 
@@ -168,75 +182,85 @@
     </div>
   </div>
 
-  <!-- Fissi -->
-  {#if showFixed}
-    <section
-      class="mb-8 sm:mb-12"
-      in:fade={{ duration: 120 }}
-      out:fade={{ duration: 90 }}
-    >
-      <div class="flex items-baseline justify-between mb-3 sm:mb-4">
-        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-primary-600">
-          Giocatori fissi
-        </h2>
-        <span class="text-xs sm:text-sm text-muted-foreground">
-          {fixedPlayers.length} elementi
-        </span>
-      </div>
+  {#await data.streamed.players}
+    <div class="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-3 mb-8">
+      <Skeleton class="h-48 w-full rounded-xl" />
+      <Skeleton class="h-48 w-full rounded-xl" />
+      <Skeleton class="h-48 w-full rounded-xl" />
+    </div>
+  {:then _}
+    <!-- Fissi -->
+    {#if showFixed}
+      <section
+        class="mb-8 sm:mb-12"
+        in:fade={{ duration: 120 }}
+        out:fade={{ duration: 90 }}
+      >
+        <div class="flex items-baseline justify-between mb-3 sm:mb-4">
+          <h2
+            class="text-xl sm:text-2xl md:text-3xl font-bold text-primary-600"
+          >
+            Giocatori fissi
+          </h2>
+          <span class="text-xs sm:text-sm text-muted-foreground">
+            {fixedPlayers.length} elementi
+          </span>
+        </div>
 
-      <div class="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-3">
-        {#each fixedPlayers as player (player.name)}
-          <div animate:flip>
-            <Card
-              name={player.name}
-              goals={player.goals}
-              wins={player.wins}
-              matchesPlayed={player.matchesPlayed}
-              winRate={player.winRate}
-              golPerMatch={player.golPerMatch}
-            />
-          </div>
-        {/each}
+        <div class="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-3">
+          {#each fixedPlayers as player (player.name)}
+            <div animate:flip>
+              <Card
+                name={player.name}
+                goals={player.goals}
+                wins={player.wins}
+                matchesPlayed={player.matchesPlayed}
+                winRate={player.winRate}
+                golPerMatch={player.golPerMatch}
+              />
+            </div>
+          {/each}
 
-        <CardAdd {isAuthenticated} temp={false} />
-      </div>
-    </section>
-  {/if}
+          <CardAdd {isAuthenticated} temp={false} />
+        </div>
+      </section>
+    {/if}
 
-  <!-- Temporanei -->
-  {#if showTemporary}
-    <section
-      class="mb-8 sm:mb-12"
-      in:fade={{ duration: 120 }}
-      out:fade={{ duration: 90 }}
-    >
-      <div class="flex items-baseline justify-between mb-3 sm:mb-4">
-        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-red-600">
-          Giocatori temporanei
-        </h2>
-        <span class="text-xs sm:text-sm text-muted-foreground">
-          {tempPlayers.length} elementi
-        </span>
-      </div>
+    <!-- Temporanei -->
+    {#if showTemporary}
+      <section
+        class="mb-8 sm:mb-12"
+        in:fade={{ duration: 120 }}
+        out:fade={{ duration: 90 }}
+      >
+        <div class="flex items-baseline justify-between mb-3 sm:mb-4">
+          <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-red-600">
+            Giocatori temporanei
+          </h2>
+          <span class="text-xs sm:text-sm text-muted-foreground">
+            {tempPlayers.length} elementi
+          </span>
+        </div>
 
-      <div class="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-3">
-        {#each tempPlayers as player (player.name)}
-          <div animate:flip>
-            <Card
-              name={player.name}
-              goals={player.goals}
-              wins={player.wins}
-              matchesPlayed={player.matchesPlayed}
-              winRate={player.winRate}
-              golPerMatch={player.golPerMatch}
-            />
-          </div>
-        {/each}
+        <div class="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-3">
+          {#each tempPlayers as player (player.name)}
+            <div animate:flip>
+              <Card
+                name={player.name}
+                goals={player.goals}
+                wins={player.wins}
+                matchesPlayed={player.matchesPlayed}
+                winRate={player.winRate}
+                golPerMatch={player.golPerMatch}
+              />
+            </div>
+          {/each}
 
-        <CardAdd {isAuthenticated} temp={true} />
-      </div>
-    </section>
-  {/if}
+          <CardAdd {isAuthenticated} temp={true} />
+        </div>
+      </section>
+    {/if}
+  {/await}
 </div>
 
 <style>

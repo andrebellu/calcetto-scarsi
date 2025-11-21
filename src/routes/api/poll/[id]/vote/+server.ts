@@ -4,19 +4,18 @@ import type { RequestHandler } from "./$types";
 export const POST: RequestHandler = async ({ locals, params, request }) => {
   const supabase = locals.supabase;
   const { user } = await locals.safeGetSession();
-  const token = locals.voterToken; // token anonimo da hooks
+  const token = locals.voterToken;
   const poll_id = Number(params.id);
 
   const body = (await request.json()) as {
     option_id?: number;
     option_ids?: number[];
     choice?: "yes" | "no";
-    player_id?: string; // NEW
+    player_id?: string;
   };
   const optionIds = body.option_ids ?? (body.option_id ? [body.option_id] : []);
   if (!poll_id || optionIds.length === 0) throw error(400, "Bad request");
 
-  // chiama l'RPC che fa l'UPSERT con la predicate sull'indice parziale
   for (const oid of optionIds) {
     const { error: e } = await supabase.rpc("vote_upsert", {
       p_poll_id: poll_id,
@@ -24,7 +23,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
       p_voter_id: user?.id ?? null,
       p_voter_token: user ? null : token,
       p_choice: body.choice ?? "yes",
-      p_player_id: body.player_id ?? null, // NEW
+      p_player_id: body.player_id ?? null,
     });
     if (e) {
       console.error("vote_upsert RPC error", e);
@@ -44,11 +43,11 @@ export const DELETE: RequestHandler = async ({ locals, params, url }) => {
 
   const q = user
     ? supabase.from('poll_vote').delete()
-        .eq('poll_id', poll_id).eq('option_id', option_id)
-        .eq('voter_id', user.id)
+      .eq('poll_id', poll_id).eq('option_id', option_id)
+      .eq('voter_id', user.id)
     : supabase.from('poll_vote').delete()
-        .eq('poll_id', poll_id).eq('option_id', option_id)
-        .eq('voter_token', token);
+      .eq('poll_id', poll_id).eq('option_id', option_id)
+      .eq('voter_token', token);
 
   const { error: e } = await q;
   if (e) throw error(500, e.message);
@@ -68,14 +67,12 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
     throw error(400, "option_id non valido");
   }
 
-  // Base query: tutti i "yes" del sondaggio
   let q = supabase
     .from("poll_vote")
     .select("player_id, choice, option_id, players!inner(name, player_id)")
     .eq("poll_id", poll_id)
     .eq("choice", "yes");
 
-  // Filtro opzionale per singola opzione
   if (option_id) {
     q = q.eq("option_id", option_id);
   }
@@ -86,7 +83,6 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
     return new Response("Error", { status: 500 });
   }
 
-  // Unici per player_id (utile sia senza filtro, sia in presenza di dati duplicati)
   const map = new Map<string, { player_id: string; name: string }>();
   for (const row of data ?? []) {
     const p = (row as any).players;

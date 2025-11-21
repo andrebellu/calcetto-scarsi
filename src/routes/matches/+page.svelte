@@ -1,5 +1,4 @@
 <script lang="ts">
-  // Import
   import MatchDialog from "$lib/Match/MatchDialog.svelte";
   import Match from "$lib/Match/Match.svelte";
   import Navbar from "$lib/Navbar/Navbar.svelte";
@@ -9,35 +8,40 @@
   import * as Command from "$lib/components/ui/command/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
+  import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
 
-  // Props + derived dialog data
   const { data } = $props<{
     data: {
       session: any | null;
       user: any | null;
       supabase: any;
-      matches: any[] | null;
+      streamed: { matches: Promise<any[]> };
       players: any[] | null;
       error?: string;
       isAuthenticated: boolean;
     };
   }>();
 
-  const dialogData = {
-    matches: Array.isArray(data.matches) ? data.matches : [],
+  let matches = $state<any[]>([]);
+
+  $effect(() => {
+    data.streamed.matches.then((res: any[]) => {
+      matches = res || [];
+    });
+  });
+
+  const dialogData = $derived({
+    matches: matches,
     players: Array.isArray(data.players) ? data.players : [],
     isAuthenticated: data.isAuthenticated,
-  };
+  });
 
-  // UI state
   let sortKey = $state<"date_desc" | "date_asc">("date_desc");
 
-  // Filtro giocatore (combobox)
   let playerOpen = $state(false);
   let playerFilterId = $state<string | null>(null);
   let playerTrigger: HTMLButtonElement = $state(null!);
 
-  // Utils
   function keyOf(m: any) {
     const d = m.match_date ?? m?.match?.match_date ?? m.date;
     const ts = typeof d === "number" ? d : Date.parse(d ?? "");
@@ -46,7 +50,7 @@
 
   const filtered = $derived(
     (() => {
-      const list = Array.isArray(data.matches) ? data.matches : [];
+      const list = matches;
 
       const normalized = list.map((m: any) => {
         const pms = Array.isArray(m.player_match) ? m.player_match : [];
@@ -76,12 +80,12 @@
         function topFor(teamPlayers: any[]) {
           const maxGoals = teamPlayers.reduce(
             (mx: number, p: any) => Math.max(mx, Number(p.goals || 0)),
-            0
+            0,
           );
           const top =
             maxGoals > 0
               ? teamPlayers.filter(
-                  (p: any) => Number(p.goals || 0) === maxGoals
+                  (p: any) => Number(p.goals || 0) === maxGoals,
                 )
               : [];
           return { maxGoals, top };
@@ -104,10 +108,10 @@
         }
 
         const mvpIds = new Set(
-          (mvpPlayers ?? []).map((p: any) => String(p.player_id))
+          (mvpPlayers ?? []).map((p: any) => String(p.player_id)),
         );
         const svpIds = new Set(
-          (svpPlayers ?? []).map((p: any) => String(p.player_id))
+          (svpPlayers ?? []).map((p: any) => String(p.player_id)),
         );
 
         const playersWithBadges = players.map((p: any) => ({
@@ -128,15 +132,14 @@
 
       if (!playerFilterId) return normalized;
 
-      // Filtro per giocatore selezionato (per id)
       return normalized.filter(
         (m: any) =>
           Array.isArray(m.players) &&
           m.players.some(
-            (p: any) => String(p.player_id) === String(playerFilterId)
-          )
+            (p: any) => String(p.player_id) === String(playerFilterId),
+          ),
       );
-    })()
+    })(),
   );
 
   const sorted = $derived(
@@ -145,10 +148,9 @@
       const dir = sortKey === "date_desc" ? -1 : 1;
       arr.sort((a, b) => dir * (keyOf(a) - keyOf(b)));
       return arr;
-    })()
+    })(),
   );
 
-  // Actions
   async function refreshMatches() {
     await invalidate(() => true);
   }
@@ -175,20 +177,17 @@
       players: [],
     };
 
-    if (Array.isArray(data.matches)) {
-      data.matches.unshift(newMatch);
-    }
+    matches.unshift(newMatch);
     refreshMatches();
   }
 
-  // Helpers combobox giocatori
   const playerOptions = $derived(
     Array.isArray(data.players)
       ? data.players.map((p: any) => ({
           value: String(p.player_id),
           label: p.name,
         }))
-      : []
+      : [],
   );
 
   function resetPlayerFilter() {
@@ -199,7 +198,7 @@
     if (!id) return "Filtra giocatore…";
     return (
       playerOptions.find(
-        (o: { value: string; label: string }) => o.value === id
+        (o: { value: string; label: string }) => o.value === id,
       )?.label ?? "Sconosciuto"
     );
   }
@@ -319,27 +318,31 @@
     </div>
 
     <div>
-      <MatchDialog
-        data={dialogData}
-        on:saved={onSavedLocal}
-        isAuthenticated={data.isAuthenticated}
-      />
+      <MatchDialog data={dialogData} on:saved={onSavedLocal} />
     </div>
   </div>
 
-  {#if Array.isArray(sorted) && sorted.length}
+  {#await data.streamed.matches}
     <div class="space-y-4 sm:space-y-6">
-      {#each sorted as match (match.match_id ?? match.created_at ?? `${match.match_date}-${match.luogo}-${match.match_number ?? ""}`)}
-        <div in:fade={{ duration: 120 }}>
-          <Match {match} />
-        </div>
-      {/each}
+      <Skeleton class="h-32 w-full rounded-xl" />
+      <Skeleton class="h-32 w-full rounded-xl" />
+      <Skeleton class="h-32 w-full rounded-xl" />
     </div>
-  {:else}
-    <div class="text-center text-surface-500 py-10">
-      Nessuna partita trovata.
-    </div>
-  {/if}
+  {:then _}
+    {#if Array.isArray(sorted) && sorted.length}
+      <div class="space-y-4 sm:space-y-6">
+        {#each sorted as match (match.match_id ?? match.created_at ?? `${match.match_date}-${match.luogo}-${match.match_number ?? ""}`)}
+          <div in:fade={{ duration: 120 }}>
+            <Match {match} />
+          </div>
+        {/each}
+      </div>
+    {:else}
+      <div class="text-center text-surface-500 py-10">
+        Nessuna partita trovata.
+      </div>
+    {/if}
+  {/await}
 </div>
 
 <style>

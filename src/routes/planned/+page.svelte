@@ -2,23 +2,21 @@
   import type { PageData } from "./$types";
   export let data: PageData;
 
-  // utili per formattazione opzionale lato client
   const partita = data.prossimaPartita;
 
-  // Ordine portieri: usa gk_order da DB se presente, altrimenti mantiene l’ordine originale
   const orderedA = (data.squads?.A ?? [])
     .slice()
     .sort(
       (p1, p2) =>
         (p1.gk_order ?? Number.MAX_SAFE_INTEGER) -
-        (p2.gk_order ?? Number.MAX_SAFE_INTEGER)
+        (p2.gk_order ?? Number.MAX_SAFE_INTEGER),
     );
   const orderedB = (data.squads?.B ?? [])
     .slice()
     .sort(
       (p1, p2) =>
         (p1.gk_order ?? Number.MAX_SAFE_INTEGER) -
-        (p2.gk_order ?? Number.MAX_SAFE_INTEGER)
+        (p2.gk_order ?? Number.MAX_SAFE_INTEGER),
     );
 </script>
 

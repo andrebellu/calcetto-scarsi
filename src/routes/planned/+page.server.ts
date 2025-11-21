@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     return { isAuthenticated, dataDecisa: false, prossimaPartita: null, squads: null };
   }
 
-  // assegnazioni: A/B/P con nome e gk_order
+  // assegnazioni: A/B
   const { data: rows } = await supabase
     .from('fixture_player')
     .select('player_id, team, is_goalkeeper, gk_order, players!inner(name)')

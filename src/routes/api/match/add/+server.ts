@@ -32,11 +32,10 @@ export const POST: RequestHandler = async (event) => {
   }
 
   const blueScore = Number(team_blue_score ?? 0);
-  const redScore  = Number(team_red_score ?? 0);
+  const redScore = Number(team_red_score ?? 0);
   const bluWon = blueScore > redScore;
   const rossiWon = redScore > blueScore;
 
-  // 1) Calcola match_number progressivo per stessa data+luogo
   const { count, error: countErr } = await supabase
     .from('matches')
     .select('match_id', { count: 'exact', head: true })
@@ -45,7 +44,6 @@ export const POST: RequestHandler = async (event) => {
   if (countErr) return new Response(JSON.stringify({ message: countErr.message }), { status: 500 });
   const nextMatchNumber = (count ?? 0) + 1;
 
-  // 2) Crea il match e prendi match_id
   const { data: matchRow, error: insMatchErr } = await supabase
     .from('matches')
     .insert([{
@@ -75,10 +73,8 @@ export const POST: RequestHandler = async (event) => {
     }));
   const rows = [...mk(blue, 'blu'), ...mk(red, 'rossi')];
 
-  // 3) Idempotenza: rimuovi eventuali righe PM del match appena creato
   await supabase.from('player_match').delete().eq('match_id', match_id);
 
-  // 4) Inserisci PM
   const { error: insPmErr } = await supabase.from('player_match').insert(rows);
   if (insPmErr) {
     await supabase.from('matches').delete().eq('match_id', match_id);

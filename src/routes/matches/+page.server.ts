@@ -1,7 +1,7 @@
 import { supabase } from "$lib/supabaseClient";
 
 export async function load({ locals }: { locals: any }) {
-  const { data: playerMatches, error: playerMatchesError } = await supabase
+  const matchesPromise = supabase
     .from("matches")
     .select(
       `
@@ -24,19 +24,13 @@ export async function load({ locals }: { locals: any }) {
   `
     )
     .order("match_date", { ascending: false })
-    .order("match_number", { ascending: false });
+    .order("match_number", { ascending: false })
+    .then(({ data, error }) => {
+      if (error) throw error;
+      return data;
+    });
 
-  if (playerMatchesError) {
-    console.error("Error fetching data:", playerMatchesError);
-    return {
-      matches: null,
-      error: playerMatchesError.message,
-    };
-  }
-
-  const { data: players, error: playersError } = await supabase
-    .from("players")
-    .select("*");
+  const { data: players } = await supabase.from("players").select("*");
 
   let isAuthenticated = false;
   if (locals && locals.user) {
@@ -44,9 +38,10 @@ export async function load({ locals }: { locals: any }) {
   }
 
   return {
-    matches: playerMatches,
+    streamed: {
+      matches: matchesPromise,
+    },
     isAuthenticated: isAuthenticated,
-    error: null,
     players: players,
   };
 }

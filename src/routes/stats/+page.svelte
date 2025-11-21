@@ -12,21 +12,42 @@
   import { cubicInOut } from "svelte/easing";
   import { onMount } from "svelte";
   import Navbar from "$lib/Navbar/Navbar.svelte";
+  import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
 
-  const { data } = $props();
+  const { data } = $props<{
+    data: {
+      isAuthenticated: boolean;
+      streamed: {
+        stats: Promise<{
+          players: any[];
+          playerMatches: any[];
+        }>;
+      };
+    };
+  }>();
+
   let context = $state<ChartContextValue>();
   let showTemporary = $state(false);
   let filteredPlayers = $state<Array<any>>([]);
-  let playerMatches = data.playerMatches;
 
-  // Filtra i giocatori (include temporanei se richiesto)
+  let players = $state<any[]>([]);
+  let playerMatches = $state<any[]>([]);
+  let loaded = $state(false);
+
   $effect(() => {
-    filteredPlayers = Array.isArray(data?.players)
-      ? data.players.filter((p) => showTemporary || !p.is_temporary)
+    data.streamed.stats.then((res: any) => {
+      players = res.players || [];
+      playerMatches = res.playerMatches || [];
+      loaded = true;
+    });
+  });
+
+  $effect(() => {
+    filteredPlayers = Array.isArray(players)
+      ? players.filter((p) => showTemporary || !p.is_temporary)
       : [];
   });
 
-  // Dati per grafico a barre (goals + autogols)
   $effect(() => {
     barChartData = filteredPlayers.map((p) => ({
       name: p.name,
@@ -42,17 +63,19 @@
   const barChartConfig = {
     goal: { label: "goal", color: "var(--chart-1)" },
     autogol: { label: "autogol", color: "var(--destructive)" },
-  } satisfies Chart.ChartConfig;
+  };
 
-  // Dati e config per line chart (andamento cumulativo gol)
   let lineChartData = $state<Array<any>>([]);
   let lineChartConfig = $state<any>({});
 
   $effect(() => {
-    if (!Array.isArray(playerMatches) || !Array.isArray(filteredPlayers))
+    if (
+      !loaded ||
+      !Array.isArray(playerMatches) ||
+      !Array.isArray(filteredPlayers)
+    )
       return;
 
-    // Raccogli e ordina le date di match
     const dateSet = new Set<string>();
     for (const pm of playerMatches) {
       const pmDate = new Date(pm.match.match_date);
@@ -61,11 +84,9 @@
     }
     const sortedDates = Array.from(dateSet).sort((a, b) => a.localeCompare(b));
 
-    // Mappa cumulativa per giocatore
     const cumulative = new Map<string, number>();
     const rows: Array<any> = [];
 
-    // Indicizza i player_match per data
     const matchesByDate = new Map<string, Array<any>>();
     for (const pm of playerMatches) {
       const matchObj = Array.isArray(pm.match) ? pm.match[0] : pm.match;
@@ -74,7 +95,6 @@
       matchesByDate.get(dStr)!.push(pm);
     }
 
-    // Costruisci righe per ogni data ordinata
     for (const dStr of sortedDates) {
       const row: any = { date: new Date(dStr) };
       const matchesToday = matchesByDate.get(dStr) ?? [];
@@ -96,7 +116,6 @@
 
     lineChartData = rows;
 
-    // Palette semplice per serie
     const colors = [
       "#1f77b4",
       "#ff7f0e",
@@ -114,52 +133,50 @@
       filteredPlayers.map((p, i) => [
         p.name,
         { label: p.name, color: colors[i % colors.length] },
-      ])
+      ]),
     );
   });
 
-  // Massimi per progress bar
   let maxGoalsRank = $state<number>(1);
   let maxAvgRank = $state<number>(1);
 
   $effect(() => {
     maxGoalsRank = Math.max(
       1,
-      ...filteredPlayers.map((p) => Number(p.goals) || 0)
+      ...filteredPlayers.map((p) => Number(p.goals) || 0),
     );
-    // Nota: golPerMatch dal loader è string (toFixed), quindi convertire a numero per calcoli corretti
     maxAvgRank = Math.max(
       0.01,
-      ...filteredPlayers.map((p) => Number(p.golPerMatch) || 0)
+      ...filteredPlayers.map((p) => Number(p.golPerMatch) || 0),
     );
   });
 
-  // Scala Y per line chart (andamenti cumulativi)
   let yScale = $state(scaleLinear().domain([0, 1]).nice());
 
   $effect(() => {
-    // Recreate/update the scale whenever maxGoalsRank changes to avoid capturing
-    // its initial value and ensure the domain reflects the latest max.
     yScale = scaleLinear()
       .domain([0, Math.max(1, maxGoalsRank) * 1.2])
       .nice();
   });
 
-  // Dati e config per “Gol per Giocatore e Luogo”
   let goalsByPlaceData = $state<Array<any>>([]);
   let goalsByPlaceConfig = $state<any>({});
 
   $effect(() => {
-    if (!Array.isArray(playerMatches) || !Array.isArray(filteredPlayers))
+    if (
+      !loaded ||
+      !Array.isArray(playerMatches) ||
+      !Array.isArray(filteredPlayers)
+    )
       return;
 
     const places = Array.from(
-      new Set(playerMatches.map((pm) => pm.match.luogo))
+      new Set(playerMatches.map((pm) => pm.match.luogo)),
     );
 
     goalsByPlaceData = filteredPlayers.map((player) => {
       const playerPMs = playerMatches.filter(
-        (pm) => pm.player.player_id === player.player_id
+        (pm) => pm.player.player_id === player.player_id,
       );
 
       const goalsPerPlace: Record<string, number> = {};
@@ -189,14 +206,12 @@
       places.map((place, i) => [
         place,
         { label: place, color: colors[i % colors.length] },
-      ])
+      ]),
     );
   });
 
-  // Tab attiva
   let selectedTab = $state("goals");
 
-  // Serie visibili per line chart
   let activeSeries = $state<Set<string>>(new Set());
   $effect(() => {
     const keys = Object.keys(lineChartConfig ?? {});
@@ -232,7 +247,6 @@
     else activeSeries = new Set(keys);
   }
 
-  // Stato responsive + preferenza “temporanei”
   let isMobile = $state(false);
   onMount(() => {
     if (typeof window === "undefined") return;
@@ -271,7 +285,6 @@
       Classifica Gol
     </button>
 
-    <!-- Tab rinominata ma mantiene la chiave "presenze" per compatibilità -->
     <button
       class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
       class:bg-primary={selectedTab === "presenze"}
@@ -315,440 +328,465 @@
     </button>
   </div>
 
-  {#if selectedTab === "goals"}
-    <Card.Root class="mb-6">
-      <Card.Header>
-        <Card.Title>Classifica Gol</Card.Title>
-        <Card.Description>Ranking con progress bar</Card.Description>
-      </Card.Header>
-
-      <Card.Content class="p-0 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs sm:text-sm">
-            <thead class="sticky top-0 bg-background/90 backdrop-blur z-10">
-              <tr class="text-muted-foreground">
-                <th class="px-2 sm:px-4 py-2 sm:py-3 w-12 sm:w-16">Pos</th>
-                <th class="px-2 sm:px-4 py-2 sm:py-3">Giocatore</th>
-                <th class="px-2 sm:px-4 py-2 sm:py-3 text-right w-20 sm:w-28"
-                  >Gol</th
-                >
-              </tr>
-            </thead>
-            <tbody>
-              {#each [...filteredPlayers].sort((a, b) => b.goals - a.goals) as player, i}
-                {@const goals = Number(player.goals) || 0}
-                {@const pct = Math.max(
-                  0,
-                  Math.min(100, (goals / maxGoalsRank) * 100)
-                )}
-                <tr
-                  class="group odd:bg-muted/30 even:bg-background hover:bg-accent/40 transition-colors"
-                >
-                  <td class="px-2 sm:px-4 py-2 sm:py-3 font-medium">
-                    {#if i === 0}🥇{/if}
-                    {#if i === 1}🥈{/if}
-                    {#if i === 2}🥉{/if}
-                    {#if i > 2}{i + 1}{/if}
-                  </td>
-                  <td class="px-2 sm:px-4 py-2 sm:py-3">
-                    <div class="flex items-center gap-3">
-                      <span
-                        class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs"
-                      >
-                        {player.name?.[0] ?? "?"}
-                      </span>
-                      <div class="min-w-0">
-                        <div class="truncate">
-                          {player.name}
-                        </div>
-                        <div class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted">
-                          <div
-                            class="h-1.5 rounded bg-primary transition-all"
-                            style={`width:${pct}%`}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-2 sm:px-4 py-2 sm:py-3 text-right tabular-nums"
-                    >{goals}</td
-                  >
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </Card.Content>
-    </Card.Root>
-  {/if}
-
-  {#if selectedTab === "presenze"}
-    <Card.Root class="mb-6 w-full">
-      <Card.Header>
-        <Card.Title>Classifica Media Gol</Card.Title>
-        <Card.Description>Gol per partita con progress bar</Card.Description>
-      </Card.Header>
-
-      <Card.Content class="p-0 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs sm:text-sm">
-            <thead class="sticky top-0 bg-background/90 backdrop-blur z-10">
-              <tr class="text-muted-foreground">
-                <th class="px-2 sm:px-4 py-2 sm:py-3 w-12 sm:w-16">Pos</th>
-                <th class="px-2 sm:px-4 py-2 sm:py-3">Giocatore</th>
-                <th class="px-2 sm:px-4 py-2 sm:py-3 text-right w-24 sm:w-32">
-                  Gol/Partita
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each [...filteredPlayers].sort((a, b) => Number(b.golPerMatch) - Number(a.golPerMatch)) as player, i}
-                {@const avg = Number(player.golPerMatch) || 0}
-                {@const pct = Math.max(
-                  0,
-                  Math.min(100, (avg / maxAvgRank) * 100)
-                )}
-                <tr
-                  class="group odd:bg-muted/30 even:bg-background hover:bg-accent/40 transition-colors"
-                >
-                  <td class="px-2 sm:px-4 py-2 sm:py-3 font-medium">
-                    {#if i === 0}🥇{/if}
-                    {#if i === 1}🥈{/if}
-                    {#if i === 2}🥉{/if}
-                    {#if i > 2}{i + 1}{/if}
-                  </td>
-                  <td class="px-2 sm:px-4 py-2 sm:py-3">
-                    <div class="flex items-center gap-3">
-                      <span
-                        class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs"
-                      >
-                        {player.name?.[0] ?? "?"}
-                      </span>
-                      <div class="min-w-0">
-                        <div class="truncate">
-                          {player.name}
-                        </div>
-                        <div class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted">
-                          <div
-                            class="h-1.5 rounded bg-primary/70 transition-all"
-                            style={`width:${pct}%`}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-2 sm:px-4 py-2 sm:py-3 text-right tabular-nums">
-                    {avg.toFixed(2)}
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </Card.Content>
-    </Card.Root>
-  {/if}
-
-  {#if selectedTab === "winrate"}
-    <Card.Root class="mb-6">
-      <Card.Header>
-        <Card.Title>Classifica Winrate</Card.Title>
-        <Card.Description>Percentuali con progress bar</Card.Description>
-      </Card.Header>
-
-      <Card.Content class="p-0 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs sm:text-sm">
-            <thead class="sticky top-0 bg-background/90 backdrop-blur z-10">
-              <tr class="text-muted-foreground">
-                <th class="px-2 sm:px-4 py-2 sm:py-3 w-12 sm:w-16">Pos</th>
-                <th class="px-2 sm:px-4 py-2 sm:py-3">Giocatore</th>
-                <th class="px-2 sm:px-4 py-2 sm:py-3 text-right w-24 sm:w-32"
-                  >Winrate</th
-                >
-              </tr>
-            </thead>
-            <tbody>
-              {#each [...filteredPlayers].sort((a, b) => b.winRate - a.winRate) as player, i}
-                {@const wr = Math.max(
-                  0,
-                  Math.min(100, Number(player.winRate) || 0)
-                )}
-                <tr
-                  class="group odd:bg-muted/30 even:bg-background hover:bg-accent/40 transition-colors"
-                >
-                  <td class="px-2 sm:px-4 py-2 sm:py-3 font-medium">
-                    {#if i === 0}🥇{/if}
-                    {#if i === 1}🥈{/if}
-                    {#if i === 2}🥉{/if}
-                    {#if i > 2}{i + 1}{/if}
-                  </td>
-                  <td class="px-2 sm:px-4 py-2 sm:py-3">
-                    <div class="flex items-center gap-3">
-                      <span
-                        class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs"
-                      >
-                        {player.name?.[0] ?? "?"}
-                      </span>
-                      <div class="min-w-0">
-                        <div class="truncate">
-                          {player.name}
-                        </div>
-                        <div class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted">
-                          <div
-                            class="h-1.5 rounded bg-primary/60 transition-all"
-                            style={`width:${wr}%`}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-2 sm:px-4 py-2 sm:py-3 text-right tabular-nums"
-                    >{wr}%</td
-                  >
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </Card.Content>
-    </Card.Root>
-  {/if}
-
-  {#if selectedTab === "graphs"}
-    <section class="mb-6 w-full mx-auto border rounded-xl p-4 sm:p-6 shadow-sm">
-      <h2 class="text-xl sm:text-2xl font-bold mb-2">
-        Gol e Autogol (Stacked)
-      </h2>
-      <p class="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4">
-        Nota: i grafici sono ottimizzati per schermi desktop; su mobile potrebbe
-        essere necessario scorrere orizzontalmente o ruotare il dispositivo per
-        una migliore leggibilità.
-      </p>
-      <div class="w-full overflow-x-auto no-scrollbar">
-        <div
-          class="min-w-[560px] md:min-w-0 aspect-[16/10] md:aspect-[16/9] mx-auto"
-        >
-          <Chart.Container
-            config={barChartConfig}
-            padding={{ top: 24, right: 16, bottom: 36, left: 36 }}
+  {#if !loaded}
+    <div class="space-y-6">
+      <Skeleton class="h-[300px] w-full rounded-xl" />
+      <Skeleton class="h-[300px] w-full rounded-xl" />
+    </div>
+  {:else}
+    {#if selectedTab === "goals"}
+      <Card.Root class="mb-6">
+        <Card.Header class={undefined}>
+          <Card.Title class={undefined}>Classifica Gol</Card.Title>
+          <Card.Description class={undefined}
+            >Ranking con progress bar</Card.Description
           >
-            <BarChart
-              bind:context
-              data={barChartData}
-              xScale={scaleBand().padding(0.25)}
-              x="name"
-              axis="x"
-              rule={false}
-              series={[
-                {
-                  key: "goals",
-                  label: "Goals",
-                  color: barChartConfig.goal.color,
-                },
-                {
-                  key: "autogols",
-                  label: "Autogol",
-                  color: barChartConfig.autogol.color,
-                },
-              ]}
-              seriesLayout="stack"
-              props={{
-                bars: {
-                  stroke: "none",
-                  initialY: context?.height,
-                  initialHeight: 0,
-                  motion: {
-                    y: {
-                      type: "tween",
-                      duration: 500,
-                      easing: cubicInOut,
-                    },
-                    height: {
-                      type: "tween",
-                      duration: 500,
-                      easing: cubicInOut,
+        </Card.Header>
+
+        <Card.Content class="p-0 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+              <thead class="sticky top-0 bg-background/90 backdrop-blur z-10">
+                <tr class="text-muted-foreground">
+                  <th class="px-2 sm:px-4 py-2 sm:py-3 w-12 sm:w-16">Pos</th>
+                  <th class="px-2 sm:px-4 py-2 sm:py-3">Giocatore</th>
+                  <th class="px-2 sm:px-4 py-2 sm:py-3 text-right w-20 sm:w-28"
+                    >Gol</th
+                  >
+                </tr>
+              </thead>
+              <tbody>
+                {#each [...filteredPlayers].sort((a, b) => b.goals - a.goals) as player, i}
+                  {@const goals = Number(player.goals) || 0}
+                  {@const pct = Math.max(
+                    0,
+                    Math.min(100, (goals / maxGoalsRank) * 100),
+                  )}
+                  <tr
+                    class="group odd:bg-muted/30 even:bg-background hover:bg-accent/40 transition-colors"
+                  >
+                    <td class="px-2 sm:px-4 py-2 sm:py-3 font-medium">
+                      {#if i === 0}🥇{/if}
+                      {#if i === 1}🥈{/if}
+                      {#if i === 2}🥉{/if}
+                      {#if i > 2}{i + 1}{/if}
+                    </td>
+                    <td class="px-2 sm:px-4 py-2 sm:py-3">
+                      <div class="flex items-center gap-3">
+                        <span
+                          class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs"
+                        >
+                          {player.name?.[0] ?? "?"}
+                        </span>
+                        <div class="min-w-0">
+                          <div class="truncate">
+                            {player.name}
+                          </div>
+                          <div class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted">
+                            <div
+                              class="h-1.5 rounded bg-primary transition-all"
+                              style={`width:${pct}%`}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td
+                      class="px-2 sm:px-4 py-2 sm:py-3 text-right tabular-nums"
+                      >{goals}</td
+                    >
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        </Card.Content>
+      </Card.Root>
+    {/if}
+
+    {#if selectedTab === "presenze"}
+      <Card.Root class="mb-6 w-full">
+        <Card.Header class={undefined}>
+          <Card.Title class={undefined}>Classifica Media Gol</Card.Title>
+          <Card.Description class={undefined}
+            >Gol per partita con progress bar</Card.Description
+          >
+        </Card.Header>
+
+        <Card.Content class="p-0 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+              <thead class="sticky top-0 bg-background/90 backdrop-blur z-10">
+                <tr class="text-muted-foreground">
+                  <th class="px-2 sm:px-4 py-2 sm:py-3 w-12 sm:w-16">Pos</th>
+                  <th class="px-2 sm:px-4 py-2 sm:py-3">Giocatore</th>
+                  <th class="px-2 sm:px-4 py-2 sm:py-3 text-right w-24 sm:w-32">
+                    Gol/Partita
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each [...filteredPlayers].sort((a, b) => Number(b.golPerMatch) - Number(a.golPerMatch)) as player, i}
+                  {@const avg = Number(player.golPerMatch) || 0}
+                  {@const pct = Math.max(
+                    0,
+                    Math.min(100, (avg / maxAvgRank) * 100),
+                  )}
+                  <tr
+                    class="group odd:bg-muted/30 even:bg-background hover:bg-accent/40 transition-colors"
+                  >
+                    <td class="px-2 sm:px-4 py-2 sm:py-3 font-medium">
+                      {#if i === 0}🥇{/if}
+                      {#if i === 1}🥈{/if}
+                      {#if i === 2}🥉{/if}
+                      {#if i > 2}{i + 1}{/if}
+                    </td>
+                    <td class="px-2 sm:px-4 py-2 sm:py-3">
+                      <div class="flex items-center gap-3">
+                        <span
+                          class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs"
+                        >
+                          {player.name?.[0] ?? "?"}
+                        </span>
+                        <div class="min-w-0">
+                          <div class="truncate">
+                            {player.name}
+                          </div>
+                          <div class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted">
+                            <div
+                              class="h-1.5 rounded bg-primary/70 transition-all"
+                              style={`width:${pct}%`}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td
+                      class="px-2 sm:px-4 py-2 sm:py-3 text-right tabular-nums"
+                    >
+                      {avg.toFixed(2)}
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        </Card.Content>
+      </Card.Root>
+    {/if}
+
+    {#if selectedTab === "winrate"}
+      <Card.Root class="mb-6">
+        <Card.Header class={undefined}>
+          <Card.Title class={undefined}>Classifica Winrate</Card.Title>
+          <Card.Description class={undefined}
+            >Percentuali con progress bar</Card.Description
+          >
+        </Card.Header>
+
+        <Card.Content class="p-0 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+              <thead class="sticky top-0 bg-background/90 backdrop-blur z-10">
+                <tr class="text-muted-foreground">
+                  <th class="px-2 sm:px-4 py-2 sm:py-3 w-12 sm:w-16">Pos</th>
+                  <th class="px-2 sm:px-4 py-2 sm:py-3">Giocatore</th>
+                  <th class="px-2 sm:px-4 py-2 sm:py-3 text-right w-24 sm:w-32"
+                    >Winrate</th
+                  >
+                </tr>
+              </thead>
+              <tbody>
+                {#each [...filteredPlayers].sort((a, b) => b.winRate - a.winRate) as player, i}
+                  {@const wr = Math.max(
+                    0,
+                    Math.min(100, Number(player.winRate) || 0),
+                  )}
+                  <tr
+                    class="group odd:bg-muted/30 even:bg-background hover:bg-accent/40 transition-colors"
+                  >
+                    <td class="px-2 sm:px-4 py-2 sm:py-3 font-medium">
+                      {#if i === 0}🥇{/if}
+                      {#if i === 1}🥈{/if}
+                      {#if i === 2}🥉{/if}
+                      {#if i > 2}{i + 1}{/if}
+                    </td>
+                    <td class="px-2 sm:px-4 py-2 sm:py-3">
+                      <div class="flex items-center gap-3">
+                        <span
+                          class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs"
+                        >
+                          {player.name?.[0] ?? "?"}
+                        </span>
+                        <div class="min-w-0">
+                          <div class="truncate">
+                            {player.name}
+                          </div>
+                          <div class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted">
+                            <div
+                              class="h-1.5 rounded bg-primary/60 transition-all"
+                              style={`width:${wr}%`}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td
+                      class="px-2 sm:px-4 py-2 sm:py-3 text-right tabular-nums"
+                      >{wr}%</td
+                    >
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        </Card.Content>
+      </Card.Root>
+    {/if}
+
+    {#if selectedTab === "graphs"}
+      <section
+        class="mb-6 w-full mx-auto border rounded-xl p-4 sm:p-6 shadow-sm"
+      >
+        <h2 class="text-xl sm:text-2xl font-bold mb-2">
+          Gol e Autogol (Stacked)
+        </h2>
+        <p class="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4">
+          Nota: i grafici sono ottimizzati per schermi desktop; su mobile
+          potrebbe essere necessario scorrere orizzontalmente o ruotare il
+          dispositivo per una migliore leggibilità.
+        </p>
+        <div class="w-full overflow-x-auto no-scrollbar">
+          <div
+            class="min-w-[560px] md:min-w-0 aspect-[16/10] md:aspect-[16/9] mx-auto"
+          >
+            <Chart.Container
+              class={undefined}
+              config={barChartConfig}
+              padding={{ top: 24, right: 16, bottom: 36, left: 36 }}
+            >
+              <BarChart
+                bind:context
+                data={barChartData}
+                xScale={scaleBand().padding(0.25)}
+                x="name"
+                axis="x"
+                rule={false}
+                series={[
+                  {
+                    key: "goals",
+                    label: "Goals",
+                    color: barChartConfig.goal.color,
+                  },
+                  {
+                    key: "autogols",
+                    label: "Autogol",
+                    color: barChartConfig.autogol.color,
+                  },
+                ]}
+                seriesLayout="stack"
+                props={{
+                  bars: {
+                    stroke: "none",
+                    initialY: context?.height,
+                    initialHeight: 0,
+                    motion: {
+                      y: {
+                        type: "tween",
+                        duration: 500,
+                        easing: cubicInOut,
+                      },
+                      height: {
+                        type: "tween",
+                        duration: 500,
+                        easing: cubicInOut,
+                      },
                     },
                   },
-                },
-                highlight: { area: true },
-              }}
-              legend
-            >
-              {#snippet belowMarks()}
-                <Highlight area={{ class: "fill-muted" }} />
-              {/snippet}
-              {#snippet tooltip()}
-                <Chart.Tooltip />
-              {/snippet}
-            </BarChart>
-          </Chart.Container>
+                  highlight: { area: true },
+                }}
+                legend
+              >
+                {#snippet belowMarks()}
+                  <Highlight area={{ class: "fill-muted" }} />
+                {/snippet}
+                {#snippet tooltip()}
+                  <Chart.Tooltip />
+                {/snippet}
+              </BarChart>
+            </Chart.Container>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="mb-6 w-full mx-auto border rounded-xl p-4 sm:p-6 shadow-sm">
-      <h2 class="text-xl sm:text-2xl font-bold mb-2">
-        Andamento Gol per Giocatore
-      </h2>
-      <p class="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4">
-        Nota: i grafici sono ottimizzati per schermi desktop; su mobile potrebbe
-        essere necessario scorrere orizzontalmente o ruotare il dispositivo per
-        una migliore leggibilità.
-      </p>
-      <div class="w-full overflow-x-auto no-scrollbar">
-        <div
-          class="min-w-[560px] md:min-w-0 aspect-[16/10] md:aspect-[16/9] mx-auto"
-        >
-          <Chart.Container
-            config={lineChartConfig}
-            padding={{ top: 24, right: 16, bottom: 36, left: 36 }}
+      <section
+        class="mb-6 w-full mx-auto border rounded-xl p-4 sm:p-6 shadow-sm"
+      >
+        <h2 class="text-xl sm:text-2xl font-bold mb-2">
+          Andamento Gol per Giocatore
+        </h2>
+        <p class="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4">
+          Nota: i grafici sono ottimizzati per schermi desktop; su mobile
+          potrebbe essere necessario scorrere orizzontalmente o ruotare il
+          dispositivo per una migliore leggibilità.
+        </p>
+        <div class="w-full overflow-x-auto no-scrollbar">
+          <div
+            class="min-w-[560px] md:min-w-0 aspect-[16/10] md:aspect-[16/9] mx-auto"
           >
-            <LineChart
-              data={lineChartData}
-              x="date"
-              xScale={scalePoint().domain(lineChartData.map((d) => d.date))}
-              {yScale}
-              axis="x"
-              series={visibleSeries}
-              props={{
-                spline: {
-                  curve: curveMonotoneX,
-                  motion: "tween",
-                  strokeWidth: 2.5,
-                },
-                highlight: { points: { r: 4 } },
-                xAxis: {
-                  format: (v: string) => {
-                    const d = new Date(v);
-                    if (typeof window === "undefined") {
-                      return d.toLocaleDateString("it-IT", {
-                        day: "2-digit",
-                        month: "short",
-                      });
-                    }
-                    return window.innerWidth < 640
-                      ? d.toLocaleDateString("it-IT", {
-                          day: "2-digit",
-                          month: "numeric",
-                        })
-                      : d.toLocaleDateString("it-IT", {
+            <Chart.Container
+              class={undefined}
+              config={lineChartConfig}
+              padding={{ top: 24, right: 16, bottom: 36, left: 36 }}
+            >
+              <LineChart
+                data={lineChartData}
+                x="date"
+                xScale={scalePoint().domain(lineChartData.map((d) => d.date))}
+                {yScale}
+                axis="x"
+                series={visibleSeries}
+                props={{
+                  spline: {
+                    curve: curveMonotoneX,
+                    motion: "tween",
+                    strokeWidth: 2.5,
+                  },
+                  highlight: { points: { r: 4 } },
+                  xAxis: {
+                    format: (v: string) => {
+                      const d = new Date(v);
+                      if (typeof window === "undefined") {
+                        return d.toLocaleDateString("it-IT", {
                           day: "2-digit",
                           month: "short",
                         });
+                      }
+                      return window.innerWidth < 640
+                        ? d.toLocaleDateString("it-IT", {
+                            day: "2-digit",
+                            month: "numeric",
+                          })
+                        : d.toLocaleDateString("it-IT", {
+                            day: "2-digit",
+                            month: "short",
+                          });
+                    },
                   },
-                },
-              }}
-            >
-              {#snippet tooltip()}
-                <Chart.Tooltip hideLabel />
-              {/snippet}
-            </LineChart>
-          </Chart.Container>
+                }}
+              >
+                {#snippet tooltip()}
+                  <Chart.Tooltip hideLabel />
+                {/snippet}
+              </LineChart>
+            </Chart.Container>
+          </div>
         </div>
-      </div>
 
-      <div class="flex flex-wrap gap-2 sm:gap-3 justify-center mt-2">
-        {#each Object.keys(lineChartConfig) as key}
+        <div class="flex flex-wrap gap-2 sm:gap-3 justify-center mt-2">
+          {#each Object.keys(lineChartConfig) as key}
+            <button
+              type="button"
+              class="flex items-center gap-2 select-none transition-opacity text-xs sm:text-sm"
+              class:opacity-50={!activeSeries.has(key)}
+              onclick={(e) => toggleSeries(key, e)}
+              onkeydown={(e) =>
+                (e.key === "Enter" || e.key === " ") && toggleSeries(key, e)}
+              role="switch"
+              aria-checked={activeSeries.has(key)}
+            >
+              <span
+                class="w-3 h-3 sm:w-4 sm:h-4 rounded"
+                style="background: {lineChartConfig[key].color}"
+              ></span>
+              <span>{lineChartConfig[key].label}</span>
+            </button>
+          {/each}
+
           <button
             type="button"
             class="flex items-center gap-2 select-none transition-opacity text-xs sm:text-sm"
-            class:opacity-50={!activeSeries.has(key)}
-            onclick={(e) => toggleSeries(key, e)}
-            onkeydown={(e) =>
-              (e.key === "Enter" || e.key === " ") && toggleSeries(key, e)}
             role="switch"
-            aria-checked={activeSeries.has(key)}
+            onclick={toggleAllSeries}
+            aria-checked={activeSeries.size ===
+              Object.keys(lineChartConfig ?? {}).length}
           >
             <span
               class="w-3 h-3 sm:w-4 sm:h-4 rounded"
-              style="background: {lineChartConfig[key].color}"
-            />
-            <span>{lineChartConfig[key].label}</span>
+              style="background: black"
+            ></span>
+            <span>
+              {activeSeries.size === Object.keys(lineChartConfig ?? {}).length
+                ? "Deseleziona tutti"
+                : "Seleziona tutti"}
+            </span>
           </button>
-        {/each}
+        </div>
+      </section>
 
-        <button
-          type="button"
-          class="flex items-center gap-2 select-none transition-opacity text-xs sm:text-sm"
-          role="switch"
-          onclick={toggleAllSeries}
-          aria-checked={activeSeries.size ===
-            Object.keys(lineChartConfig ?? {}).length}
-        >
-          <span
-            class="w-3 h-3 sm:w-4 sm:h-4 rounded"
-            style="background: black"
-          />
-          <span>
-            {activeSeries.size === Object.keys(lineChartConfig ?? {}).length
-              ? "Deseleziona tutti"
-              : "Seleziona tutti"}
-          </span>
-        </button>
-      </div>
-    </section>
-
-    <section class="mb-6 w-full mx-auto border rounded-xl p-4 sm:p-6 shadow-sm">
-      <h2 class="text-xl sm:text-2xl font-bold mb-2">
-        Gol per Giocatore e Luogo
-      </h2>
-      <p class="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4">
-        Nota: i grafici sono ottimizzati per schermi desktop; su mobile potrebbe
-        essere necessario scorrere orizzontalmente o ruotare il dispositivo per
-        una migliore leggibilità.
-      </p>
-      <div class="w-full overflow-x-auto no-scrollbar">
-        <div
-          class="min-w-[560px] md:min-w-0 aspect-[16/10] md:aspect-[16/9] mx-auto"
-        >
-          <Chart.Container config={goalsByPlaceConfig}>
-            <BarChart
-              bind:context
-              data={goalsByPlaceData}
-              xScale={scaleBand().padding(0.25)}
-              x="name"
-              axis="x"
-              series={Object.keys(goalsByPlaceConfig).map((place) => ({
-                key: place,
-                label: goalsByPlaceConfig[place].label,
-                color: goalsByPlaceConfig[place].color,
-              }))}
-              seriesLayout="stack"
-              props={{
-                bars: {
-                  stroke: "none",
-                  strokeWidth: 0,
-                  initialY: context?.height,
-                  initialHeight: 0,
-                  motion: {
-                    y: {
-                      type: "tween",
-                      duration: 500,
-                      easing: cubicInOut,
-                    },
-                    height: {
-                      type: "tween",
-                      duration: 500,
-                      easing: cubicInOut,
+      <section
+        class="mb-6 w-full mx-auto border rounded-xl p-4 sm:p-6 shadow-sm"
+      >
+        <h2 class="text-xl sm:text-2xl font-bold mb-2">
+          Gol per Giocatore e Luogo
+        </h2>
+        <p class="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4">
+          Nota: i grafici sono ottimizzati per schermi desktop; su mobile
+          potrebbe essere necessario scorrere orizzontalmente o ruotare il
+          dispositivo per una migliore leggibilità.
+        </p>
+        <div class="w-full overflow-x-auto no-scrollbar">
+          <div
+            class="min-w-[560px] md:min-w-0 aspect-[16/10] md:aspect-[16/9] mx-auto"
+          >
+            <Chart.Container class={undefined} config={goalsByPlaceConfig}>
+              <BarChart
+                bind:context
+                data={goalsByPlaceData}
+                xScale={scaleBand().padding(0.25)}
+                x="name"
+                axis="x"
+                series={Object.keys(goalsByPlaceConfig).map((place) => ({
+                  key: place,
+                  label: goalsByPlaceConfig[place].label,
+                  color: goalsByPlaceConfig[place].color,
+                }))}
+                seriesLayout="stack"
+                props={{
+                  bars: {
+                    stroke: "none",
+                    strokeWidth: 0,
+                    initialY: context?.height,
+                    initialHeight: 0,
+                    motion: {
+                      y: {
+                        type: "tween",
+                        duration: 500,
+                        easing: cubicInOut,
+                      },
+                      height: {
+                        type: "tween",
+                        duration: 500,
+                        easing: cubicInOut,
+                      },
                     },
                   },
-                },
-                highlight: { area: true },
-              }}
-              legend
-            >
-              {#snippet belowMarks()}
-                <Highlight area={{ class: "fill-muted" }} />
-              {/snippet}
-              {#snippet tooltip()}
-                <Chart.Tooltip />
-              {/snippet}
-            </BarChart>
-          </Chart.Container>
+                  highlight: { area: true },
+                }}
+                legend
+              >
+                {#snippet belowMarks()}
+                  <Highlight area={{ class: "fill-muted" }} />
+                {/snippet}
+                {#snippet tooltip()}
+                  <Chart.Tooltip />
+                {/snippet}
+              </BarChart>
+            </Chart.Container>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    {/if}
   {/if}
 </div>
 

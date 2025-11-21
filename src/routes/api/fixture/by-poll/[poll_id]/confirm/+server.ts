@@ -26,7 +26,6 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
   };
 
   try {
-    // 1) trova o crea fixture per il poll
     const { data: fx, error: fxErr } = await supabase
       .from("fixture")
       .select("fixture_id, status")
@@ -40,7 +39,6 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
     let created_fixture = false;
 
     if (!fixture_id) {
-      // se non fornito option_id, deduci winner dai voti
       let winnerOptionId = body.option_id;
       if (!winnerOptionId) {
         const { data: options, error: optErr } = await supabase
@@ -90,7 +88,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
           poll_id,
           match_date: picked.match_date,
           luogo: picked.luogo,
-          status: "confirmed", // direttamente stato ammesso
+          status: "confirmed",
           locked_at: new Date().toISOString(),
         })
         .select("fixture_id")
@@ -101,9 +99,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       created_fixture = true;
     }
 
-    // 2) upsert convocati se forniti
     if (Array.isArray(body.players) && body.players.length > 0) {
-      // dedup per player_id: l’ultima assegnazione vince
       const map = new Map<
         string,
         {
@@ -137,16 +133,14 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
 
       const { error: upErr } = await supabase
         .from("fixture_player")
-        .upsert(rows, { onConflict: "fixture_id,player_id" }); // idempotente su UNIQUE(fixture_id,player_id)
+        .upsert(rows, { onConflict: "fixture_id,player_id" });
       if (upErr) {
-        // rollback soft se la fixture è stata appena creata per coerenza
         if (created_fixture)
           await supabase.from("fixture").delete().eq("fixture_id", fixture_id);
         throw upErr;
       }
     }
 
-    // 3) assicurati che fixture resti confirmed e chiudi il poll
     const { error: updErr } = await supabase
       .from("fixture")
       .update({ status: "confirmed", locked_at: new Date().toISOString() })

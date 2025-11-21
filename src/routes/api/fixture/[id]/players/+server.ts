@@ -14,7 +14,6 @@ export const PUT = async ({ params, request, locals }) => {
   const fixture_id = Number(params.id);
   const body = await request.json(); // { players: [{ player_id, team, is_goalkeeper }] }
   const rows = (body.players ?? []).map((p) => ({ fixture_id, ...p }));
-  // Necessario vincolo unico su (fixture_id, player_id)
   const { error: e } = await supabase.from('fixture_player')
     .upsert(rows, { onConflict: 'fixture_id,player_id' });
   if (e) throw error(500, e.message);

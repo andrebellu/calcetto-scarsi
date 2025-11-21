@@ -2,12 +2,10 @@
   export let isAuthenticated;
   export let temp;
   function addPlayer() {
-    // Implementa qui la logica per aggiungere un giocatore
     alert("Aggiungi giocatore!");
   }
 
   function addTempPlayer() {
-    // Implementa qui la logica per aggiungere un giocatore temporaneo
     alert("Aggiungi giocatore temporaneo!");
   }
 </script>
