@@ -63,7 +63,7 @@
       <HomeCard
         title={data.prossimaPartita.luogo}
         description={`Prossima partita: ${new Date(
-          data.prossimaPartita.data
+          data.prossimaPartita.data,
         ).toLocaleDateString("it-IT", {
           weekday: "long",
           day: "2-digit",

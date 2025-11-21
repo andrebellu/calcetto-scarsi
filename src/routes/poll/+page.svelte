@@ -66,11 +66,13 @@
   let newOptions = $state<NewOpt[]>([
     { match_date: "", luogo: "", time_of_day: "" },
   ]);
+  let defaultLocation = $state("");
+  let generationMode = $state<"full" | "weekend">("full");
 
   function addRow() {
     newOptions = [
       ...newOptions,
-      { match_date: "", luogo: "", time_of_day: "" },
+      { match_date: "", luogo: defaultLocation, time_of_day: "" },
     ];
   }
   function removeRow(i: number) {
@@ -351,8 +353,6 @@
     const t = teamsByPoll[poll_id] ?? { A: [], B: [], P: [] };
     const players = [
       ...(t.A ?? []).map((v) => ({
-        player_id: v.player_id,
-        team: "A",
         is_goalkeeper: (v as any).is_goalkeeper ?? false,
       })),
       ...(t.B ?? []).map((v) => ({
@@ -457,28 +457,33 @@
       const dateStr = d.toISOString().split("T")[0];
       const day = d.getDay(); // 0=Dom, 6=Sab
 
+      // Se modalità weekend, salta Lun-Gio
+      if (generationMode === "weekend" && day >= 1 && day <= 4) {
+        continue;
+      }
+
       if (day === 0 || day === 6) {
         // Sabato o Domenica: Mattina, Pomeriggio, Sera
         opts.push({
           match_date: dateStr,
-          luogo: "",
+          luogo: defaultLocation,
           time_of_day: "Mattina",
         });
         opts.push({
           match_date: dateStr,
-          luogo: "",
+          luogo: defaultLocation,
           time_of_day: "Pomeriggio",
         });
         opts.push({
           match_date: dateStr,
-          luogo: "",
+          luogo: defaultLocation,
           time_of_day: "Sera",
         });
       } else {
         // Feriale: solo Sera
         opts.push({
           match_date: dateStr,
-          luogo: "",
+          luogo: defaultLocation,
           time_of_day: "Sera",
         });
       }
@@ -524,6 +529,33 @@
           </div>
 
           <div class="space-y-3">
+            <div
+              class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/20 rounded-lg border"
+            >
+              <div class="space-y-1">
+                <label class="text-xs font-medium flex items-center gap-1">
+                  <MapPin class="size-3" /> Luogo Default
+                </label>
+                <input
+                  class="w-full border rounded-md px-2 py-1.5 text-sm"
+                  placeholder="Es. Campo Sportivo"
+                  bind:value={defaultLocation}
+                />
+              </div>
+              <div class="space-y-1">
+                <label class="text-xs font-medium flex items-center gap-1">
+                  <CalendarIcon class="size-3" /> Modalità Generazione
+                </label>
+                <select
+                  class="w-full border rounded-md px-2 py-1.5 text-sm bg-background"
+                  bind:value={generationMode}
+                >
+                  <option value="full">Settimana Intera</option>
+                  <option value="weekend">Solo Festivi (Ven-Dom)</option>
+                </select>
+              </div>
+            </div>
+
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium">Opzioni di voto</span>
               <div class="flex gap-2">
