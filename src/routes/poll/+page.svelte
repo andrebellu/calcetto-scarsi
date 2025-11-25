@@ -512,7 +512,7 @@
       const res = await fetch(`/api/poll/${data.poll.poll_id}/absence`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ absent: newStatus }),
+        body: JSON.stringify({ absent: newStatus, player_id: chosenPlayerId }),
       });
 
       if (!res.ok) {
