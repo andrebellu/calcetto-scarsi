@@ -978,21 +978,17 @@
                 </div>
               {/if}
 
-              {#if isLogged}
-                <div
-                  class="mt-4 pt-4 border-t flex items-center justify-center"
+              <div class="mt-4 pt-4 border-t flex items-center justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="w-full border-red-200"
+                  disabled={false}
+                  onclick={toggleAbsence}
                 >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    class="w-full border-red-200"
-                    disabled={false}
-                    onclick={toggleAbsence}
-                  >
-                    {isAbsent ? "Sono presente" : "Non ci sono"}
-                  </Button>
-                </div>
-              {/if}
+                  {isAbsent ? "Sono presente" : "Non ci sono"}
+                </Button>
+              </div>
             </div>
           </div>
 
