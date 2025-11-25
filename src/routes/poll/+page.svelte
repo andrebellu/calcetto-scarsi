@@ -50,6 +50,8 @@
           myVotes: Array<{ option_id: number; choice: string }>;
           chosenPlayerId: string | null;
           players: Array<{ player_id: string; name: string }>;
+          absentPlayers: Array<{ player_id: string; name: string }>;
+          isAbsent: boolean;
         }>;
       };
       session: any;
@@ -68,6 +70,8 @@
   let counts = $state<Record<number, number>>({});
   let myVotes = $state<any[]>([]);
   let players = $state<Array<{ player_id: string; name: string }>>([]);
+  let absentPlayers = $state<Array<{ player_id: string; name: string }>>([]);
+  let isAbsent = $state(false);
   let chosenPlayerId = $state<string | null>(null);
   let loaded = $state(false);
 
@@ -77,6 +81,8 @@
       counts = res.counts;
       myVotes = res.myVotes;
       players = res.players;
+      absentPlayers = res.absentPlayers;
+      isAbsent = res.isAbsent;
       chosenPlayerId = res.chosenPlayerId;
       loaded = true;
     });
@@ -96,6 +102,7 @@
   ]);
   let defaultLocation = $state("");
   let generationMode = $state<"full" | "weekend">("full");
+  let startDate = $state("");
 
   function addRow() {
     newOptions = [
@@ -446,14 +453,20 @@
   }
 
   function generateWeek() {
-    const today = new Date();
-    const nextMonday = new Date(today);
-    nextMonday.setDate(today.getDate() + ((1 + 7 - today.getDay()) % 7 || 7));
+    let start: Date;
+    if (startDate) {
+      start = new Date(startDate);
+    } else {
+      const today = new Date();
+      const day = today.getDay() || 7; // 1=Mon, 7=Sun
+      start = new Date(today);
+      start.setDate(today.getDate() - day + 1); // Go to Monday
+    }
 
     const opts: NewOpt[] = [];
     for (let i = 0; i < 7; i++) {
-      const d = new Date(nextMonday);
-      d.setDate(nextMonday.getDate() + i);
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
       const dateStr = d.toISOString().split("T")[0];
       const day = d.getDay(); // 0=Dom, 6=Sab
 
@@ -487,6 +500,35 @@
     }
     newOptions = opts;
     toast.success("Settimana generata!");
+  }
+
+  async function toggleAbsence() {
+    if (!data.poll) return;
+    const newStatus = !isAbsent;
+    // Optimistic update
+    isAbsent = newStatus;
+
+    try {
+      const res = await fetch(`/api/poll/${data.poll.poll_id}/absence`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ absent: newStatus }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed");
+      }
+
+      if (newStatus) {
+        toast.success("Segnato come assente");
+      } else {
+        toast.success("Rimosso da assenti");
+      }
+      location.reload(); // Reload to update lists/counts if needed
+    } catch (e) {
+      isAbsent = !newStatus; // Revert
+      toast.error("Errore aggiornamento assenza");
+    }
   }
 </script>
 
@@ -550,6 +592,16 @@
                   <option value="full">Settimana Intera</option>
                   <option value="weekend">Solo Festivi (Ven-Dom)</option>
                 </select>
+              </div>
+              <div class="space-y-1">
+                <label class="text-xs font-medium flex items-center gap-1">
+                  <CalendarIcon class="size-3" /> Data Inizio (Opzionale)
+                </label>
+                <input
+                  type="date"
+                  class="w-full border rounded-md px-2 py-1.5 text-sm bg-background"
+                  bind:value={startDate}
+                />
               </div>
             </div>
 
@@ -754,6 +806,13 @@
         {/if}
       </header>
 
+      {#if absentPlayers.length > 0}
+        <div class="text-sm text-muted-foreground bg-muted/30 p-2 rounded-md">
+          <span class="font-semibold">Assenti:</span>
+          {absentPlayers.map((p) => p.name).join(", ")}
+        </div>
+      {/if}
+
       {#if !loaded}
         <div class="space-y-4">
           <Skeleton class="h-[200px] w-full rounded-xl" />
@@ -916,6 +975,22 @@
                     class="bg-white text-green-700 border-green-200"
                     href={undefined}>Identificato</Badge
                   >
+                </div>
+              {/if}
+
+              {#if isLogged}
+                <div
+                  class="mt-4 pt-4 border-t flex items-center justify-center"
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="w-full border-red-200"
+                    disabled={false}
+                    onclick={toggleAbsence}
+                  >
+                    {isAbsent ? "Sono presente" : "Non ci sono"}
+                  </Button>
                 </div>
               {/if}
             </div>

@@ -35,6 +35,8 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
           myVotes: [],
           chosenPlayerId: null,
           players: [],
+          absentPlayers: [],
+          isAbsent: false,
         }),
       },
     };
@@ -76,12 +78,25 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
       .from("poll_vote")
       .select("option_id, choice")
       .eq("poll_id", poll.poll_id),
-  ]).then(([playersRes, usedRowsRes, optionsRes, myVotesRes, allVotesRes]) => {
+    // absences
+    supabase
+      .from("poll_absence")
+      .select("player_id, players(name)")
+      .eq("poll_id", poll.poll_id),
+  ]).then(([playersRes, usedRowsRes, optionsRes, myVotesRes, allVotesRes, absencesRes]) => {
     const safeAllPlayers = playersRes.data ?? [];
     const usedRows = usedRowsRes.data ?? [];
     const options = optionsRes.data ?? [];
     const myVotes = myVotesRes.data ?? [];
     const allVotes = allVotesRes.data ?? [];
+    const absences = absencesRes.data ?? [];
+
+    const absentPlayers = absences.map((a: any) => ({
+      player_id: a.player_id,
+      name: a.players?.name ?? "Sconosciuto",
+    }));
+
+    const isAbsent = user ? absences.some((a) => a.player_id === user.id) : false;
 
     const usedSet = new Set<string>(
       usedRows.map((r) => r.player_id).filter(Boolean)
@@ -107,6 +122,8 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
       myVotes,
       chosenPlayerId,
       players: availablePlayers,
+      absentPlayers,
+      isAbsent,
     };
   });
 

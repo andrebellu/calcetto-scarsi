@@ -9,7 +9,6 @@
 <div
   class="min-h-dvh flex flex-col items-center justify-center bg-transparent px-4 py-6 md:py-10"
 >
-  <!-- 🔹 Header -->
   <div class="mb-6 md:mb-10 text-center">
     <h1
       class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight"
