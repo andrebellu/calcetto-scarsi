@@ -217,6 +217,9 @@
   let tempPlayerId = $state<string>("");
   async function confirmPlayerFinal() {
     chosenPlayerId = tempPlayerId;
+    if (data.poll) {
+      document.cookie = `poll_identity_${data.poll.poll_id}=${chosenPlayerId}; path=/; max-age=31536000`;
+    }
   }
 
   let closing = $state(false);
@@ -980,13 +983,15 @@
 
               <div class="mt-4 pt-4 border-t flex items-center justify-center">
                 <Button
-                  variant="outline"
+                  variant={isAbsent ? "default" : "outline"}
                   size="sm"
-                  class="w-full border-red-200"
-                  disabled={false}
+                  class="w-full {isAbsent
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'border-red-200 hover:bg-red-50 text-red-700'}"
+                  disabled={!chosenPlayerId}
                   onclick={toggleAbsence}
                 >
-                  {isAbsent ? "Sono presente" : "Non ci sono"}
+                  {isAbsent ? "Rimuovi assenza" : "Segna come assente"}
                 </Button>
               </div>
             </div>
@@ -1024,7 +1029,9 @@
                 <label
                   class="relative flex flex-col gap-3 border rounded-xl p-5 shadow-sm transition-all cursor-pointer hover:border-primary/50 {isSelected
                     ? 'bg-primary/5 border-primary ring-1 ring-primary'
-                    : 'bg-card hover:bg-muted/50'}"
+                    : 'bg-card hover:bg-muted/50'} {isAbsent
+                    ? 'opacity-60'
+                    : ''}"
                 >
                   <div class="flex items-start justify-between">
                     <div class="flex flex-col">
@@ -1066,7 +1073,8 @@
                         checked={isSelected}
                         disabled={recent.status !== "open" ||
                           busyId === opt.option_id ||
-                          !chosenPlayerId}
+                          !chosenPlayerId ||
+                          isAbsent}
                         onchange={(e) =>
                           toggleVote(
                             recent.poll_id,

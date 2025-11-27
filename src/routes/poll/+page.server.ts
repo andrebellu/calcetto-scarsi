@@ -1,7 +1,7 @@
 // src/routes/poll/+page.server.ts
 import type { PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async ({ locals, depends }) => {
+export const load: PageServerLoad = async ({ locals, depends, cookies }) => {
   const supabase = locals.supabase;
   const { user, session } = await locals.safeGetSession();
   const token = locals.voterToken;
@@ -96,8 +96,6 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
       name: a.players?.name ?? "Sconosciuto",
     }));
 
-    const isAbsent = user ? absences.some((a) => a.player_id === user.id) : false;
-
     const usedSet = new Set<string>(
       usedRows.map((r) => r.player_id).filter(Boolean)
     );
@@ -105,6 +103,18 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
     // chosenPlayerId logic
     const firstWithPlayer = myVotes.find((v) => v.player_id);
     let chosenPlayerId = firstWithPlayer?.player_id ?? null;
+
+    // Try to recover from cookie if not found in votes
+    if (!chosenPlayerId) {
+      const cookieName = `poll_identity_${poll.poll_id}`;
+      const cookieVal = cookies.get(cookieName);
+      if (cookieVal) {
+        // Verify the player exists in safeAllPlayers
+        if (safeAllPlayers.find(p => p.player_id === cookieVal)) {
+          chosenPlayerId = cookieVal;
+        }
+      }
+    }
 
     // counts
     const counts: Record<number, number> = {};
@@ -115,6 +125,10 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
     const availablePlayers = safeAllPlayers.filter(
       (p) => p.player_id === chosenPlayerId || !usedSet.has(p.player_id)
     );
+
+    const isAbsent = user
+      ? absences.some((a) => a.player_id === user.id)
+      : (chosenPlayerId ? absences.some((a) => a.player_id === chosenPlayerId) : false);
 
     return {
       options,
