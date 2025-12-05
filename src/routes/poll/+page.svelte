@@ -367,9 +367,13 @@
   async function confirmFixture(poll_id: number) {
     const t = teamsByPoll[poll_id] ?? { A: [], B: [], P: [] };
     const players = [
+      // --- CORREZIONE QUI SOTTO ---
       ...(t.A ?? []).map((v) => ({
+        player_id: v.player_id, // <--- Aggiunto
+        team: "A", // <--- Aggiunto
         is_goalkeeper: (v as any).is_goalkeeper ?? false,
       })),
+      // ---------------------------
       ...(t.B ?? []).map((v) => ({
         player_id: v.player_id,
         team: "B",
@@ -389,7 +393,7 @@
     msg = res.ok ? "Convocati confermati" : "Errore conferma convocati";
     if (res.ok) {
       toast.success("Convocati confermati");
-      goto(`/fixture/${(await res.json()).fixture_id}`);
+      goto(`/planned`);
     } else {
       toast.error("Errore conferma convocati");
     }
