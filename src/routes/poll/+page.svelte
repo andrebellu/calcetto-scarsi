@@ -367,13 +367,11 @@
   async function confirmFixture(poll_id: number) {
     const t = teamsByPoll[poll_id] ?? { A: [], B: [], P: [] };
     const players = [
-      // --- CORREZIONE QUI SOTTO ---
       ...(t.A ?? []).map((v) => ({
-        player_id: v.player_id, // <--- Aggiunto
-        team: "A", // <--- Aggiunto
+        player_id: v.player_id,
+        team: "A",
         is_goalkeeper: (v as any).is_goalkeeper ?? false,
       })),
-      // ---------------------------
       ...(t.B ?? []).map((v) => ({
         player_id: v.player_id,
         team: "B",
