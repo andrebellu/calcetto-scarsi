@@ -8,6 +8,9 @@
   import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
   import { Toaster, toast } from "svelte-sonner";
   import { cn } from "$lib/utils.js";
+  import Plus from "@lucide/svelte/icons/plus";
+  import Minus from "@lucide/svelte/icons/minus";
+  import X from "@lucide/svelte/icons/x";
 
   const { data } = $props<{
     data: {
@@ -68,7 +71,7 @@
     const redGoals = redPlayers.reduce((s, p) => s + Number(p.goals || 0), 0);
     const blueOwn = bluePlayers.reduce(
       (s, p) => s + Number(p.ownGoals || 0),
-      0
+      0,
     );
     const redOwn = redPlayers.reduce((s, p) => s + Number(p.ownGoals || 0), 0);
     team_blue_score = blueGoals + redOwn;
@@ -76,7 +79,7 @@
   });
 
   let freeOptions = $derived(
-    unassignedPlayers.map((p) => ({ value: p.id, label: p.name }))
+    unassignedPlayers.map((p) => ({ value: p.id, label: p.name })),
   );
 
   async function selectForBlue(id: string) {
@@ -232,7 +235,7 @@
   {/if}
 
   <Dialog.Content
-    class="rounded-2xl md:rounded-3xl shadow-2xl border  p-5 sm:p-7 md:p-8 w-[95vw] max-w-5xl"
+    class="rounded-2xl md:rounded-3xl shadow-2xl border p-5 sm:p-7 md:p-8 w-[95vw] max-w-5xl max-h-[90dvh] overflow-y-auto"
   >
     <Dialog.Header>
       <Dialog.Title class="text-lg sm:text-xl font-semibold ">
@@ -243,7 +246,13 @@
       </Dialog.Description>
     </Dialog.Header>
 
-    <form class="space-y-5 mt-3 sm:mt-4" on:submit|preventDefault={submitMatch}>
+    <form
+      class="space-y-5 mt-3 sm:mt-4"
+      onsubmit={(e) => {
+        e.preventDefault();
+        submitMatch();
+      }}
+    >
       <!-- Scoreboard -->
       <div
         class="flex items-center justify-center gap-3 sm:gap-5 sm:text-lg font-semibold"
@@ -318,7 +327,7 @@
                     >
                       <CheckIcon
                         class={cn(
-                          cbBlueValue !== opt.value && "text-transparent"
+                          cbBlueValue !== opt.value && "text-transparent",
                         )}
                       />
                       {opt.label}
@@ -358,7 +367,7 @@
                     >
                       <CheckIcon
                         class={cn(
-                          cbRedValue !== opt.value && "text-transparent"
+                          cbRedValue !== opt.value && "text-transparent",
                         )}
                       />
                       {opt.label}
@@ -386,54 +395,93 @@
           >
             {#each bluePlayers as player (player.id)}
               <div
-                class="bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-900/60 text-blue-900 dark:text-blue-200 rounded-xl shadow-sm cursor-default flex flex-col justify-between h-[92px] min-h-[92px] max-h-[92px] p-2"
+                class="bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-900/60 text-blue-900 dark:text-blue-200 rounded-xl shadow-sm cursor-default flex flex-col justify-between h-[92px] min-h-[92px] max-h-[92px] p-2 relative pr-7"
               >
                 <div class="flex items-center justify-between">
                   <div class="truncate text-sm font-medium">{player.name}</div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <label
-                    class="flex items-center gap-1 text-xs"
-                    on:touchstart|passive
-                    on:mousedown|stopPropagation={stopEditDrag}
-                  >
-                    <span
-                      class="px-1 rounded bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200"
-                      >G</span
-                    >
-                    <input
-                      type="number"
-                      min="0"
-                      bind:value={player.goals}
-                      on:change={() => (bluePlayers = [...bluePlayers])}
-                      title="Gol"
-                      class="w-12 h-7 px-2 py-1 text-center border border-neutral-300 dark:border-neutral-700 rounded text-sm bg-white dark:bg-neutral-900"
-                    />
-                  </label>
-                  <label
-                    class="flex items-center gap-1 text-xs"
-                    on:touchstart|passive
-                    on:mousedown|stopPropagation={stopEditDrag}
-                  >
-                    <span
-                      class="px-1 rounded bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200"
-                      >A</span
-                    >
-                    <input
-                      type="number"
-                      min="0"
-                      bind:value={player.ownGoals}
-                      on:change={() => (bluePlayers = [...bluePlayers])}
-                      title="Autogol"
-                      class="w-12 h-7 px-2 py-1 text-center border border-neutral-300 dark:border-neutral-700 rounded text-sm bg-white dark:bg-neutral-900"
-                    />
-                  </label>
                   <button
                     type="button"
-                    class="w-7 h-7 border border-neutral-300 dark:border-neutral-700 rounded text-sm hover:bg-blue-100/60 dark:hover:bg-blue-900/30"
+                    class="absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full text-blue-400 hover:text-red-500 hover:bg-white dark:hover:bg-neutral-800 transition-colors"
                     title="Rimuovi"
-                    on:click={() => removeFromBlue(player.id)}>×</button
+                    onclick={() => removeFromBlue(player.id)}
                   >
+                    <X class="size-3.5" />
+                  </button>
+                </div>
+                <div class="flex items-center gap-1 sm:gap-2">
+                  <div class="flex items-center flex-col gap-0.5">
+                    <span
+                      class="text-[10px] font-bold text-blue-900 dark:text-blue-200 uppercase tracking-wider"
+                      >Gol</span
+                    >
+                    <div
+                      class="flex items-center bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800"
+                    >
+                      <button
+                        type="button"
+                        class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
+                        onclick={() => {
+                          if (player.goals > 0) {
+                            player.goals--;
+                            bluePlayers = [...bluePlayers];
+                          }
+                        }}
+                      >
+                        <Minus class="size-3 sm:size-3.5" />
+                      </button>
+                      <span
+                        class="w-6 sm:w-8 text-center text-sm font-semibold tabular-nums"
+                        >{player.goals}</span
+                      >
+                      <button
+                        type="button"
+                        class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
+                        onclick={() => {
+                          player.goals++;
+                          bluePlayers = [...bluePlayers];
+                        }}
+                      >
+                        <Plus class="size-3 sm:size-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center flex-col gap-0.5">
+                    <span
+                      class="text-[10px] font-bold text-blue-900 dark:text-blue-200 uppercase tracking-wider"
+                      >Aut</span
+                    >
+                    <div
+                      class="flex items-center bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800"
+                    >
+                      <button
+                        type="button"
+                        class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
+                        onclick={() => {
+                          if (player.ownGoals > 0) {
+                            player.ownGoals--;
+                            bluePlayers = [...bluePlayers];
+                          }
+                        }}
+                      >
+                        <Minus class="size-3 sm:size-3.5" />
+                      </button>
+                      <span
+                        class="w-6 sm:w-8 text-center text-sm font-semibold tabular-nums"
+                        >{player.ownGoals}</span
+                      >
+                      <button
+                        type="button"
+                        class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
+                        onclick={() => {
+                          player.ownGoals++;
+                          bluePlayers = [...bluePlayers];
+                        }}
+                      >
+                        <Plus class="size-3 sm:size-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             {/each}
@@ -453,54 +501,93 @@
           >
             {#each redPlayers as player (player.id)}
               <div
-                class="bg-red-50/60 dark:bg-red-950/40 border border-red-200/60 dark:border-red-900/60 text-red-900 dark:text-red-200 rounded-xl shadow-sm cursor-default flex flex-col justify-between h-[92px] min-h-[92px] max-h-[92px] p-2"
+                class="bg-red-50/60 dark:bg-red-950/40 border border-red-200/60 dark:border-red-900/60 text-red-900 dark:text-red-200 rounded-xl shadow-sm cursor-default flex flex-col justify-between h-[92px] min-h-[92px] max-h-[92px] p-2 relative pr-7"
               >
                 <div class="flex items-center justify-between">
                   <div class="truncate text-sm font-medium">{player.name}</div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <label
-                    class="flex items-center gap-1 text-xs"
-                    on:touchstart|passive
-                    on:mousedown|stopPropagation={stopEditDrag}
-                  >
-                    <span
-                      class="px-1 rounded bg-red-200 text-red-900 dark:bg-red-900 dark:text-red-200"
-                      >G</span
-                    >
-                    <input
-                      type="number"
-                      min="0"
-                      bind:value={player.goals}
-                      on:change={() => (redPlayers = [...redPlayers])}
-                      title="Gol"
-                      class="w-12 h-7 px-2 py-1 text-center border border-neutral-300 dark:border-neutral-700 rounded text-sm bg-white dark:bg-neutral-900"
-                    />
-                  </label>
-                  <label
-                    class="flex items-center gap-1 text-xs"
-                    on:touchstart|passive
-                    on:mousedown|stopPropagation={stopEditDrag}
-                  >
-                    <span
-                      class="px-1 rounded bg-red-200 text-red-900 dark:bg-red-900 dark:text-red-200"
-                      >A</span
-                    >
-                    <input
-                      type="number"
-                      min="0"
-                      bind:value={player.ownGoals}
-                      on:change={() => (redPlayers = [...redPlayers])}
-                      title="Autogol"
-                      class="w-12 h-7 px-2 py-1 text-center border border-neutral-300 dark:border-neutral-700 rounded text-sm bg-white dark:bg-neutral-900"
-                    />
-                  </label>
                   <button
                     type="button"
-                    class="w-7 h-7 border border-neutral-300 dark:border-neutral-700 rounded text-sm hover:bg-red-100/60 dark:hover:bg-red-900/30"
+                    class="absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full text-red-400 hover:text-red-600 hover:bg-white dark:hover:bg-neutral-800 transition-colors"
                     title="Rimuovi"
-                    on:click={() => removeFromRed(player.id)}>×</button
+                    onclick={() => removeFromRed(player.id)}
                   >
+                    <X class="size-3.5" />
+                  </button>
+                </div>
+                <div class="flex items-center gap-1 sm:gap-2">
+                  <div class="flex items-center flex-col gap-0.5">
+                    <span
+                      class="text-[10px] font-bold text-red-900 dark:text-red-200 uppercase tracking-wider"
+                      >Gol</span
+                    >
+                    <div
+                      class="flex items-center bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800"
+                    >
+                      <button
+                        type="button"
+                        class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
+                        onclick={() => {
+                          if (player.goals > 0) {
+                            player.goals--;
+                            redPlayers = [...redPlayers];
+                          }
+                        }}
+                      >
+                        <Minus class="size-3 sm:size-3.5" />
+                      </button>
+                      <span
+                        class="w-6 sm:w-8 text-center text-sm font-semibold tabular-nums"
+                        >{player.goals}</span
+                      >
+                      <button
+                        type="button"
+                        class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
+                        onclick={() => {
+                          player.goals++;
+                          redPlayers = [...redPlayers];
+                        }}
+                      >
+                        <Plus class="size-3 sm:size-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center flex-col gap-0.5">
+                    <span
+                      class="text-[10px] font-bold text-red-900 dark:text-red-200 uppercase tracking-wider"
+                      >Aut</span
+                    >
+                    <div
+                      class="flex items-center bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800"
+                    >
+                      <button
+                        type="button"
+                        class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
+                        onclick={() => {
+                          if (player.ownGoals > 0) {
+                            player.ownGoals--;
+                            redPlayers = [...redPlayers];
+                          }
+                        }}
+                      >
+                        <Minus class="size-3 sm:size-3.5" />
+                      </button>
+                      <span
+                        class="w-6 sm:w-8 text-center text-sm font-semibold tabular-nums"
+                        >{player.ownGoals}</span
+                      >
+                      <button
+                        type="button"
+                        class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
+                        onclick={() => {
+                          player.ownGoals++;
+                          redPlayers = [...redPlayers];
+                        }}
+                      >
+                        <Plus class="size-3 sm:size-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             {/each}
