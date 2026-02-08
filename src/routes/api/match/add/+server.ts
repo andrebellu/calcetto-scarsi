@@ -5,6 +5,7 @@ type PlayerInput = { player_id: string; goals: number; autogol: number; };
 type Payload = {
   luogo: string;
   match_date: string; // YYYY-MM-DD
+  season?: string;
   team_blue_score: number;
   team_red_score: number;
   blue: PlayerInput[];
@@ -23,7 +24,7 @@ export const POST: RequestHandler = async (event) => {
   try { body = await request.json(); }
   catch { return new Response(JSON.stringify({ message: 'JSON non valido' }), { status: 400 }); }
 
-  const { luogo, match_date, team_blue_score, team_red_score, blue = [], red = [] } = body ?? {};
+  const { luogo, match_date, season, team_blue_score, team_red_score, blue = [], red = [] } = body ?? {};
   if (!luogo?.trim() || !match_date) {
     return new Response(JSON.stringify({ message: 'luogo e match_date sono obbligatori' }), { status: 400 });
   }
@@ -49,6 +50,7 @@ export const POST: RequestHandler = async (event) => {
     .insert([{
       match_date,
       luogo,
+      season: season || null,
       match_number: nextMatchNumber,
       team_blue_score: blueScore,
       team_red_score: redScore,

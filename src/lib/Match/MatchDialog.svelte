@@ -25,6 +25,7 @@
   let open = $state(false);
   let luogo = $state("");
   let match_date = $state("");
+  let season = $state("");
   let team_blue_score = $state(0);
   let team_red_score = $state(0);
 
@@ -41,12 +42,21 @@
 
   onMount(() => {
     const players = Array.isArray(data?.players) ? data!.players! : [];
-    unassignedPlayers = players.map((p) => ({
+    unassignedPlayers = players.map((p: any) => ({
       ...p,
       id: p.player_id,
       goals: 0,
       ownGoals: 0,
     }));
+
+    const now = new Date();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+    if (month < 7) {
+      season = `Inverno/Primavera ${year}`;
+    } else {
+      season = `Autunno/Inverno ${year}`;
+    }
   });
 
   $effect(() => {
@@ -126,6 +136,8 @@
     return (
       luogo.trim() &&
       match_date &&
+      season.trim() &&
+      bluePlayers.length > 0 &&
       bluePlayers.length > 0 &&
       redPlayers.length > 0
     );
@@ -142,6 +154,7 @@
     const payload = {
       luogo,
       match_date,
+      season,
       team_blue_score,
       team_red_score,
       blue: bluePlayers.map((p) => ({
@@ -175,6 +188,7 @@
         match_id: dataResp?.match_id ?? crypto.randomUUID(),
         match_date,
         luogo,
+        season,
         match_number: dataResp?.match_number ?? null,
         team_blue_score,
         team_red_score,
@@ -283,6 +297,18 @@
             bind:value={luogo}
             placeholder="Es. Campo A"
             aria-label="Luogo partita"
+          />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label for="matches_season" class="text-sm font-medium">
+            Stagione
+          </label>
+          <input
+            id="matches_season"
+            class="w-full rounded-xl border px-3 py-2.5 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            bind:value={season}
+            placeholder="Es. Inverno 2026"
+            aria-label="Stagione"
           />
         </div>
         <div class="flex flex-col gap-1.5">

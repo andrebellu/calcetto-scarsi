@@ -18,18 +18,24 @@ export const POST: RequestHandler = async ({ locals, request }) => {
     .insert({ title, status: 'open', created_by: user.id })
     .select('*')
     .single();
-  if (pollErr) throw error(500, pollErr.message);
+  if (pollErr) {
+    console.error(pollErr);
+    throw error(500, pollErr.message);
+  }
 
   const rows = (options ?? []).map((o) => ({
     poll_id: newPoll.poll_id,
-    match_date: o.match_date,
-    luogo: o.luogo,
-    time_of_day: o.time_of_day,
-    note: o.note ?? null
+    match_date: o.match_date || null,
+    luogo: o.luogo || null,
+    time_of_day: o.time_of_day || null,
+    note: o.note || null
   }));
   if (rows.length) {
     const { error: optErr } = await supabase.from('poll_option').insert(rows);
-    if (optErr) throw error(500, optErr.message);
+    if (optErr) {
+      console.error(optErr);
+      throw error(500, optErr.message);
+    }
   }
 
   return json({ poll_id: newPoll.poll_id });

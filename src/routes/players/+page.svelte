@@ -5,15 +5,19 @@
   import { fade } from "svelte/transition";
   import { flip } from "svelte/animate";
   import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
+  import { enhance } from "$app/forms";
 
   const { data } = $props<{
     data: {
       isAuthenticated: boolean;
+      currentUserPlayerId: number | null;
       streamed: {
         players: Promise<
           Array<{
+            id: number;
             name: string;
             is_temporary: boolean;
+            is_claimable: boolean;
             goals: number;
             wins: number;
             matchesPlayed: number;
@@ -27,10 +31,23 @@
 
   let isAuthenticated = data.isAuthenticated;
   let players = $state<any[]>([]);
+  let showClaimModal = $state(false);
+  let availablePlayers = $state<any[]>([]);
 
   $effect(() => {
     data.streamed.players.then((res) => {
       players = res || [];
+      // Filtra i giocatori che non hanno un user_id
+      availablePlayers = res.filter((p: any) => p.is_claimable);
+
+      // Se sono loggato MA non ho un player_id associato, mostrami la scelta
+      if (
+        data.isAuthenticated &&
+        !data.currentUserPlayerId &&
+        availablePlayers.length > 0
+      ) {
+        showClaimModal = true;
+      }
     });
   });
 
@@ -68,6 +85,36 @@
 
 <div class="mx-auto w-full max-w-7xl px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
   <Navbar />
+
+  {#if showClaimModal}
+    <div
+      class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl shadow-sm"
+      transition:fade
+    >
+      <h3 class="font-bold text-lg text-yellow-800 mb-2">
+        Benvenuto! Chi sei?
+      </h3>
+      <p class="text-sm text-yellow-700 mb-4">
+        Collega il tuo nuovo account al tuo storico partite. Seleziona il tuo
+        nome:
+      </p>
+
+      <form method="POST" action="?/claim" use:enhance>
+        <div class="flex gap-2">
+          <select name="playerId" class="p-2 border rounded-lg bg-white flex-1">
+            {#each availablePlayers as player}
+              <option value={player.id}>{player.name}</option>
+            {/each}
+          </select>
+          <button
+            class="bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700"
+          >
+            Sono io
+          </button>
+        </div>
+      </form>
+    </div>
+  {/if}
 
   <header
     class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
