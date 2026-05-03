@@ -1,95 +1,120 @@
 <script lang="ts">
-  import Badge from "$lib/Badge/Badge.svelte";
   import HomeCard from "$lib/HomeCard/HomeCard.svelte";
   import { homeCards } from "$lib/homeCardsData";
-
   export let data;
 </script>
 
-<div
-  class="min-h-dvh flex flex-col items-center justify-center bg-transparent px-4 py-6 md:py-10"
->
-  <div class="mb-6 md:mb-10 text-center">
-    <h1
-      class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight"
-    >
-      <span class="font-light">Calcetto per</span>
-      <span class="font-bold text-primary-500"> scarsi</span>
-    </h1>
+<div class="min-h-dvh flex flex-col items-center justify-center bg-transparent px-4 py-8 md:py-12">
+  <div class="w-full max-w-4xl px-0 md:px-8">
 
-    <div
-      class="flex justify-center mt-3 md:mt-4 gap-2 md:gap-3 items-center flex-wrap"
-    >
-      <Badge
-        content={`${data.playersCount} giocatori`}
-        redContent={`${data.tempPlayersCount} temp`}
-      />
-      <Badge content={`${data.totalMatches} partite`} redContent={0} />
-      <Badge content={`${data.totalGoals} gol`} redContent={0} />
-    </div>
-
+    <!-- Admin pill -->
     {#if data.isAuthenticated}
-      <div
-        class="mt-3 md:mt-4 text-green-400 font-semibold flex justify-center items-center text-sm md:text-base"
-      >
-        <span class="material-symbols-outlined align-middle mr-2">verified</span
-        >
-        Sei loggato come admin
+      <div class="inline-flex items-center gap-2 bg-green-950/40 text-green-400 text-xs font-medium px-3 py-1.5 rounded-full border border-green-800/50 mb-5">
+        <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+        Loggato come admin
       </div>
     {:else}
-      <div class="flex justify-center mt-4 md:mt-6">
+      <div class="mb-5">
         <a
-          href="/auth"
-          class="rounded-3xl bg-surface-200/10 shadow-lg border border-white/30 px-6 py-2 md:px-8 md:py-3 text-base md:text-lg font-semibold text-primary-700 backdrop-blur-md transition hover:scale-105 hover:shadow-2xl"
+                href="/auth"
+                class="inline-flex items-center gap-2 text-sm text-surface-400 hover:text-primary-400 transition"
         >
-          <span class="material-symbols-outlined align-middle mr-2">lock</span>
+          <span class="material-symbols-outlined text-base">lock</span>
           Entra come admin
         </a>
       </div>
     {/if}
-  </div>
 
-  <div
-    class="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-8 w-full max-w-6xl px-0 md:px-12"
-  >
-    {#each homeCards as card}
-      <HomeCard {...card}>
-        Vai a {card.title.toLowerCase()} →
-      </HomeCard>
-    {/each}
+    <!-- Title -->
+    <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight leading-none mb-6">
+      <span class="font-light text-surface-200">Calcetto per</span><br />
+      <span class="text-primary-500">scarsi</span>
+    </h1>
 
+    <!-- Stats strip -->
+    <div class="flex flex-wrap gap-3 mb-8">
+      <div class="bg-surface-800/50 border border-surface-700/50 rounded-lg px-4 py-2.5 flex flex-col">
+        <span class="text-xl font-medium text-surface-100 leading-none">
+          {data.playersCount}
+          {#if data.tempPlayersCount > 0}
+            <span class="text-sm text-red-400 font-medium">+{data.tempPlayersCount} temp</span>
+          {/if}
+        </span>
+        <span class="text-[11px] uppercase tracking-widest text-surface-400 mt-1">Giocatori</span>
+      </div>
+      <div class="bg-surface-800/50 border border-surface-700/50 rounded-lg px-4 py-2.5 flex flex-col">
+        <span class="text-xl font-medium text-surface-100 leading-none">{data.totalMatches}</span>
+        <span class="text-[11px] uppercase tracking-widest text-surface-400 mt-1">Partite</span>
+      </div>
+      <div class="bg-surface-800/50 border border-surface-700/50 rounded-lg px-4 py-2.5 flex flex-col">
+        <span class="text-xl font-medium text-surface-100 leading-none">{data.totalGoals}</span>
+        <span class="text-[11px] uppercase tracking-widest text-surface-400 mt-1">Gol totali</span>
+      </div>
+    </div>
+
+    <!-- Next match / Poll banner -->
     {#if data.dataDecisa && data.prossimaPartita}
-      <HomeCard
-        title={data.prossimaPartita.luogo}
-        description={`Prossima partita: ${new Date(
-          data.prossimaPartita.data,
-        ).toLocaleDateString("it-IT", {
-          weekday: "long",
-          day: "2-digit",
-          month: "long",
-        })} di ${data.prossimaPartita.ora}`}
-        icon="stadium"
-        link="/planned"
-        color="secondary"
-        highlight={true}
-      >
-        <a href="/planned">Vedi convocazioni →</a>
-        {#if data.isAuthenticated}
-          <div class="mt-1 text-primary-500 font-semibold text-sm md:text-base">
-            <a href="/poll">Crea nuovo sondaggio →</a>
+      <div class="w-full bg-surface-800/40 border border-primary-600/60 rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div class="flex items-center gap-4">
+          <div class="w-11 h-11 bg-primary-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-primary-400">stadium</span>
           </div>
-        {/if}
-      </HomeCard>
+          <div>
+            <p class="font-semibold text-surface-100">{data.prossimaPartita.luogo}</p>
+            <p class="text-sm text-surface-400">
+              {new Date(data.prossimaPartita.data).toLocaleDateString("it-IT", {
+                weekday: "long",
+                day: "2-digit",
+                month: "long",
+              })} · ore {data.prossimaPartita.ora}
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          {#if data.isAuthenticated}
+            <a
+                    href="/poll"
+                    class="text-sm text-surface-400 border border-surface-600 rounded-lg px-4 py-2 hover:border-surface-400 transition"
+            >
+              Crea sondaggio →
+            </a>
+          {/if}
+          <a
+                  href="/planned"
+                  class="text-sm font-medium bg-primary-600 hover:bg-primary-500 text-white rounded-lg px-4 py-2 transition"
+          >
+            Convocazioni →
+          </a>
+        </div>
+      </div>
     {:else}
-      <HomeCard
-        title="Sondaggio"
-        description="Vota per la prossima partita"
-        icon="poll"
-        link="/poll"
-        color="secondary"
-      >
-        Vai al sondaggio →
-      </HomeCard>
+      <div class="w-full bg-surface-800/40 border border-secondary-600/60 rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div class="flex items-center gap-4">
+          <div class="w-11 h-11 bg-secondary-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-secondary-400">poll</span>
+          </div>
+          <div>
+            <p class="font-semibold text-surface-100">Sondaggio</p>
+            <p class="text-sm text-surface-400">Vota per la prossima partita</p>
+          </div>
+        </div>
+        <a
+                href="/poll"
+                class="text-sm font-medium bg-secondary-600 hover:bg-secondary-500 text-white rounded-lg px-4 py-2 transition flex-shrink-0"
+        >
+          Vai al sondaggio →
+        </a>
+      </div>
     {/if}
+
+    <!-- Nav cards grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+      {#each homeCards as card}
+        <HomeCard {...card}>
+          Vai a {card.title.toLowerCase()} →
+        </HomeCard>
+      {/each}
+    </div>
+
   </div>
 </div>

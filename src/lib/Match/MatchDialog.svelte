@@ -40,6 +40,15 @@
   let cbRedValue = $state<string>("");
   let cbRedTrigger: HTMLButtonElement = $state(null!);
 
+  function defaultSeason() {
+    const now = new Date();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+    return month < 7
+      ? `Inverno/Primavera ${year}`
+      : `Autunno/Inverno ${year}`;
+  }
+
   onMount(() => {
     const players = Array.isArray(data?.players) ? data!.players! : [];
     unassignedPlayers = players.map((p: any) => ({
@@ -48,20 +57,13 @@
       goals: 0,
       ownGoals: 0,
     }));
-
-    const now = new Date();
-    const month = now.getMonth();
-    const year = now.getFullYear();
-    if (month < 7) {
-      season = `Inverno/Primavera ${year}`;
-    } else {
-      season = `Autunno/Inverno ${year}`;
-    }
+    season = defaultSeason();
   });
 
   $effect(() => {
     if (typeof document === "undefined") return;
     if (open) {
+      season = defaultSeason();
       const sbw = window.innerWidth - document.documentElement.clientWidth;
       document.documentElement.style.setProperty("--sbw", sbw + "px");
       document.body.style.overflow = "hidden";
@@ -150,11 +152,12 @@
     if (!canSubmit() || saving) return;
     saving = true;
     errorMsg = "";
+    const normalizedSeason = season.trim();
 
     const payload = {
       luogo,
       match_date,
-      season,
+      season: normalizedSeason,
       team_blue_score,
       team_red_score,
       blue: bluePlayers.map((p) => ({
@@ -188,14 +191,13 @@
         match_id: dataResp?.match_id ?? crypto.randomUUID(),
         match_date,
         luogo,
-        season,
+        season: normalizedSeason,
         match_number: dataResp?.match_number ?? null,
         team_blue_score,
         team_red_score,
         created_at: new Date().toISOString(),
         players: [],
       };
-      if (Array.isArray(data?.matches)) data.matches.unshift(newMatch);
 
       luogo = "";
       match_date = "";
@@ -203,14 +205,14 @@
       redPlayers = [];
       unassignedPlayers = (
         Array.isArray(data?.players) ? data!.players! : []
-      ).map((p) => ({
+      ).map((p: any) => ({
         ...p,
         id: p.player_id,
         goals: 0,
         ownGoals: 0,
       }));
       open = false;
-      dispatch("saved");
+      dispatch("saved", newMatch);
     } catch (e: any) {
       errorMsg = e?.message || "Errore inatteso";
     } finally {

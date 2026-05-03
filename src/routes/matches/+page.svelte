@@ -2,7 +2,7 @@
   import MatchDialog from "$lib/Match/MatchDialog.svelte";
   import Match from "$lib/Match/Match.svelte";
   import Navbar from "$lib/Navbar/Navbar.svelte";
-  import { invalidate } from "$app/navigation";
+  import { goto, invalidate } from "$app/navigation";
   import { fade } from "svelte/transition";
   import * as Popover from "$lib/components/ui/popover/index.js";
   import * as Command from "$lib/components/ui/command/index.js";
@@ -17,6 +17,8 @@
       supabase: any;
       streamed: { matches: Promise<any[]> };
       players: any[] | null;
+      seasonOptions?: Array<{ value: string; label: string }>;
+      selectedSeason?: string;
       error?: string;
       isAuthenticated: boolean;
     };
@@ -28,6 +30,11 @@
     data.streamed.matches.then((res: any[]) => {
       matches = res || [];
     });
+  });
+
+  let activeSeason = $state(data.selectedSeason ?? "all");
+  $effect(() => {
+    activeSeason = data.selectedSeason ?? "all";
   });
 
   const dialogData = $derived({
@@ -48,11 +55,30 @@
     return Number.isFinite(ts) ? ts : 0;
   }
 
+  function seasonMatchesFilter(matchSeason: string | null | undefined) {
+    const normalized = matchSeason?.trim() || null;
+    if (activeSeason === "all") return true;
+    if (activeSeason === "__none__") return !normalized;
+    return normalized === activeSeason;
+  }
+
+  function applySeasonFilter(nextSeason: string) {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (!nextSeason || nextSeason === "all") url.searchParams.delete("season");
+    else url.searchParams.set("season", nextSeason);
+    goto(`${url.pathname}${url.search}${url.hash}`, {
+      replaceState: true,
+      noScroll: true,
+      keepFocus: true,
+    });
+  }
+
   const filtered = $derived(
     (() => {
-      const list = matches;
-
-      const normalized = list.map((m: any) => {
+      const normalized = matches
+        .filter((m: any) => seasonMatchesFilter(m.season))
+        .map((m: any) => {
         const pms = Array.isArray(m.player_match) ? m.player_match : [];
         const players = pms.map((pm: any) => ({
           name: pm?.players?.name ?? "",
@@ -120,15 +146,15 @@
           is_svp: svpIds.has(String(p.player_id)),
         }));
 
-        return {
-          ...m,
-          players: playersWithBadges,
-          mvpPlayers,
-          svpPlayers,
-          mvpGoals,
-          svpGoals,
-        };
-      });
+          return {
+            ...m,
+            players: playersWithBadges,
+            mvpPlayers,
+            svpPlayers,
+            mvpGoals,
+            svpGoals,
+          };
+        });
 
       if (!playerFilterId) return normalized;
 
@@ -160,6 +186,7 @@
     const match_id = payload?.match_id;
     const match_date = payload?.match_date ?? payload?.match?.match_date;
     const luogo = payload?.luogo ?? payload?.match?.luogo;
+    const season = payload?.season ?? payload?.match?.season ?? null;
     const match_number = payload?.match_number ?? null;
     const team_blue_score =
       payload?.team_blue_score ?? payload?.match?.team_blue_score ?? 0;
@@ -170,6 +197,7 @@
       match_id,
       match_date,
       luogo,
+      season,
       match_number,
       team_blue_score,
       team_red_score,
@@ -222,8 +250,29 @@
       </header>
 
       <div
-        class="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center"
+        class="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-end"
       >
+        <div class="flex flex-col gap-1 w-full sm:w-56">
+          <label
+            for="season-filter"
+            class="text-xs font-medium text-muted-foreground"
+          >
+            Stagione
+          </label>
+          <select
+            id="season-filter"
+            class="w-full rounded-xl border bg-background px-3 py-2.5 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            bind:value={activeSeason}
+            onchange={() => applySeasonFilter(activeSeason)}
+          >
+            <option value="all">Tutte le stagioni</option>
+            <option value="__none__">Senza stagione</option>
+            {#each data.seasonOptions ?? [] as option (option.value)}
+              <option value={option.value}>{option.label}</option>
+            {/each}
+          </select>
+        </div>
+
         <!-- Combobox giocatore (Popover + Command) -->
         <Popover.Root bind:open={playerOpen}>
           <Popover.Trigger bind:ref={playerTrigger}>

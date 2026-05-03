@@ -11,12 +11,15 @@
   import * as Card from "$lib/components/ui/card/index.js";
   import { cubicInOut } from "svelte/easing";
   import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
   import Navbar from "$lib/Navbar/Navbar.svelte";
   import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
 
   const { data } = $props<{
     data: {
       isAuthenticated: boolean;
+      seasonOptions?: Array<{ value: string; label: string }>;
+      selectedSeason?: string;
       streamed: {
         stats: Promise<{
           players: any[];
@@ -29,10 +32,27 @@
   let context = $state<ChartContextValue>();
   let showTemporary = $state(false);
   let filteredPlayers = $state<Array<any>>([]);
+  let activeSeason = $state(data.selectedSeason ?? "all");
 
   let players = $state<any[]>([]);
   let playerMatches = $state<any[]>([]);
   let loaded = $state(false);
+
+  $effect(() => {
+    activeSeason = data.selectedSeason ?? "all";
+  });
+
+  function applySeasonFilter(nextSeason: string) {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (!nextSeason || nextSeason === "all") url.searchParams.delete("season");
+    else url.searchParams.set("season", nextSeason);
+    goto(`${url.pathname}${url.search}${url.hash}`, {
+      replaceState: true,
+      noScroll: true,
+      keepFocus: true,
+    });
+  }
 
   $effect(() => {
     data.streamed.stats.then((res: any) => {
@@ -271,6 +291,27 @@
   >
     Statistiche
   </h1>
+
+  <div class="mb-4 sm:mb-6 flex flex-col gap-1 w-full sm:w-56">
+    <label
+      for="season-filter"
+      class="text-xs font-medium text-muted-foreground"
+    >
+      Stagione
+    </label>
+    <select
+      id="season-filter"
+      class="w-full rounded-xl border bg-background px-3 py-2.5 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+      bind:value={activeSeason}
+      onchange={() => applySeasonFilter(activeSeason)}
+    >
+      <option value="all">Tutte le stagioni</option>
+      <option value="__none__">Senza stagione</option>
+      {#each data.seasonOptions ?? [] as option (option.value)}
+        <option value={option.value}>{option.label}</option>
+      {/each}
+    </select>
+  </div>
 
   <div
     class="flex gap-2 sm:gap-4 mb-4 sm:mb-6 overflow-x-auto no-scrollbar py-1 px-1"

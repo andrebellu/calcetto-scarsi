@@ -36,6 +36,7 @@ export const POST: RequestHandler = async (event) => {
   const redScore = Number(team_red_score ?? 0);
   const bluWon = blueScore > redScore;
   const rossiWon = redScore > blueScore;
+  const normalizedSeason = season?.trim() || null;
 
   const { count, error: countErr } = await supabase
     .from('matches')
@@ -50,13 +51,13 @@ export const POST: RequestHandler = async (event) => {
     .insert([{
       match_date,
       luogo,
-      season: season || null,
+      season: normalizedSeason,
       match_number: nextMatchNumber,
       team_blue_score: blueScore,
       team_red_score: redScore,
       created_at: new Date().toISOString()
     }])
-    .select('match_id')
+    .select('match_id, match_number, season')
     .single();
 
   if (insMatchErr) return new Response(JSON.stringify({ message: insMatchErr.message }), { status: 500 });
@@ -83,5 +84,5 @@ export const POST: RequestHandler = async (event) => {
     return new Response(JSON.stringify({ message: insPmErr.message }), { status: 500 });
   }
 
-  return json({ match_id, players: rows });
+  return json({ match_id, match_number: matchRow.match_number, season: matchRow.season, players: rows });
 };

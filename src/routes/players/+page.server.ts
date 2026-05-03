@@ -19,17 +19,20 @@ export async function load({ locals }: { locals: any }) {
     const playerMatches = matchesRes.data ?? [];
 
     return players.map((player) => {
+      const playerKey = player.player_id ?? player.id;
+      const samePlayer = (pm: any) => String(pm.player_id) === String(playerKey);
+
       const goals = playerMatches
-        .filter((pm) => pm.player_id === player.id)
+        .filter(samePlayer)
         .reduce((sum, pm) => sum + (pm.goals || 0), 0);
 
       const wins = playerMatches.filter(
-        (pm) => pm.player_id === player.id && pm.is_winner
+        (pm) => samePlayer(pm) && pm.is_winner
       ).length;
 
       const matchesPlayed = playerMatches
         .map((pm) => pm.player_id)
-        .filter((id) => id === player.id).length;
+        .filter((id) => String(id) === String(playerKey)).length;
       const winRate =
         matchesPlayed > 0 ? Math.round((wins / matchesPlayed) * 100) : 0;
       const golPerMatch =

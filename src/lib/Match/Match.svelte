@@ -17,10 +17,6 @@
     $: rossiWinners = getTeamPlayers(match.player_match, "rossi").some(
         (p) => p.is_winner
     );
-
-    function pid(pm: any) {
-        return String(pm?.players?.player_id ?? pm?.players?.name ?? "");
-    }
 </script>
 
 <div
@@ -33,6 +29,9 @@
             <div class="text-sm text-gray-500">Partita #{match.match_id}</div>
             <div class="text-lg font-semibold">{match.luogo}</div>
             <div class="text-xs text-gray-400">{match.match_date}</div>
+            <div class="mt-1 inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary-700 dark:text-primary-300">
+                {match.season ?? "Stagione non specificata"}
+            </div>
         </div>
         <div class="flex items-center gap-2 mt-4 md:mt-0 justify-center">
             <div class="flex flex-col items-center">
