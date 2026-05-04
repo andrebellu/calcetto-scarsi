@@ -3,7 +3,6 @@ import type { RequestHandler } from "./$types";
 
 export const POST: RequestHandler = async ({ locals, params, request }) => {
   const supabase = locals.supabase;
-  const { user } = await locals.safeGetSession();
   const token = locals.voterToken;
   const poll_id = Number(params.id);
 
@@ -20,8 +19,8 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
     const { error: e } = await supabase.rpc("vote_upsert", {
       p_poll_id: poll_id,
       p_option_id: oid,
-      p_voter_id: user?.id ?? null,
-      p_voter_token: user ? null : token,
+      p_voter_id: null,
+      p_voter_token: token,
       p_choice: body.choice ?? "yes",
       p_player_id: body.player_id ?? null,
     });
@@ -35,21 +34,15 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 
 export const DELETE: RequestHandler = async ({ locals, params, url }) => {
   const supabase = locals.supabase;
-  const { user } = await locals.safeGetSession();
   const token = locals.voterToken;
   const poll_id = Number(params.id);
   const option_id = Number(url.searchParams.get('option_id'));
   if (!poll_id || !option_id) throw error(400, 'option_id required');
 
-  const q = user
-    ? supabase.from('poll_vote').delete()
-      .eq('poll_id', poll_id).eq('option_id', option_id)
-      .eq('voter_id', user.id)
-    : supabase.from('poll_vote').delete()
-      .eq('poll_id', poll_id).eq('option_id', option_id)
-      .eq('voter_token', token);
+  const { error: e } = await supabase.from('poll_vote').delete()
+    .eq('poll_id', poll_id).eq('option_id', option_id)
+    .eq('voter_token', token);
 
-  const { error: e } = await q;
   if (e) throw error(500, e.message);
   return json({ ok: true });
 };

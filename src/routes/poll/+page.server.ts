@@ -64,18 +64,12 @@ export const load: PageServerLoad = async ({ locals, depends, cookies }) => {
       .select("option_id, match_date, luogo, time_of_day, note")
       .eq("poll_id", poll.poll_id)
       .order("match_date", { ascending: true }),
-    // myVotes
-    user
-      ? supabase
-        .from("poll_vote")
-        .select("option_id, choice, player_id")
-        .eq("poll_id", poll.poll_id)
-        .eq("voter_id", user.id)
-      : supabase
-        .from("poll_vote")
-        .select("option_id, choice, player_id")
-        .eq("poll_id", poll.poll_id)
-        .eq("voter_token", token),
+    // myVotes - sempre basato su token anonimo, indipendentemente dal login
+    supabase
+      .from("poll_vote")
+      .select("option_id, choice, player_id")
+      .eq("poll_id", poll.poll_id)
+      .eq("voter_token", token),
     // allVotes
     supabase
       .from("poll_vote")
@@ -114,9 +108,7 @@ export const load: PageServerLoad = async ({ locals, depends, cookies }) => {
         : null;
 
     const firstWithPlayer = myVotesRaw.find((v) => v.player_id);
-    const chosenPlayerId = user
-      ? validCookiePlayer
-      : (validCookiePlayer ?? firstWithPlayer?.player_id ?? null);
+    const chosenPlayerId = validCookiePlayer ?? null;
 
     const myVotes = chosenPlayerId
       ? myVotesRaw.filter((v) => v.player_id === chosenPlayerId)
