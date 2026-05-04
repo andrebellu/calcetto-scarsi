@@ -2,15 +2,13 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ params, request, locals }) => {
-    const { user } = await locals.safeGetSession();
-
     const { id } = params;
     const { absent, player_id } = await request.json();
 
-    const targetPlayerId = user ? user.id : player_id;
+    const targetPlayerId = player_id;
 
     if (!targetPlayerId) {
-        return error(401, 'Unauthorized');
+        return error(400, 'player_id required');
     }
 
     const supabase = locals.supabase;

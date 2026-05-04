@@ -229,6 +229,15 @@
         }
     }
 
+    function resetPlayerIdentity() {
+        chosenPlayerId = null;
+        tempPlayerId = "";
+        isAbsent = false;
+        if (identityCookieName) {
+            document.cookie = `${identityCookieName}=; path=/; max-age=0`;
+        }
+    }
+
     let closing = $state(false);
     const isLogged = $derived(!!data.isLogged);
     let tabByPoll = $state<Record<number, "voto" | "squadre">>({});
@@ -1070,6 +1079,13 @@
                                                         ? "✓ Assente"
                                                         : "Segna assente"}
                                                 </Button>
+                                                <button
+                                                    type="button"
+                                                    class="h-9 px-3 rounded-md border border-input bg-background text-xs font-medium hover:bg-muted transition-colors"
+                                                    onclick={resetPlayerIdentity}
+                                                >
+                                                    Cambia
+                                                </button>
                                             </div>
                                         {/if}
                                     </div>

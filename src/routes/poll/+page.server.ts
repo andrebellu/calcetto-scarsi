@@ -90,7 +90,7 @@ export const load: PageServerLoad = async ({ locals, depends, cookies }) => {
     const safeAllPlayers = playersRes.data ?? [];
     const usedRows = usedRowsRes.data ?? [];
     const options = optionsRes.data ?? [];
-    const myVotes = myVotesRes.data ?? [];
+    const myVotesRaw = myVotesRes.data ?? [];
     const allVotes = allVotesRes.data ?? [];
     const absences = absencesRes.data ?? [];
 
@@ -104,20 +104,23 @@ export const load: PageServerLoad = async ({ locals, depends, cookies }) => {
     );
 
     // chosenPlayerId logic
-    const firstWithPlayer = myVotes.find((v) => v.player_id);
-    let chosenPlayerId = firstWithPlayer?.player_id ?? null;
+    // For logged users, prefer explicit cookie identity and avoid auto-reusing
+    // previous account votes (shared admin account scenario).
+    const cookieName = getIdentityCookieName(poll.poll_id);
+    const cookieVal = cookies.get(cookieName);
+    const validCookiePlayer =
+      cookieVal && safeAllPlayers.find((p) => p.player_id === cookieVal)
+        ? cookieVal
+        : null;
 
-    // Try to recover from cookie if not found in votes
-    if (!chosenPlayerId) {
-      const cookieName = getIdentityCookieName(poll.poll_id);
-      const cookieVal = cookies.get(cookieName);
-      if (cookieVal) {
-        // Verify the player exists in safeAllPlayers
-        if (safeAllPlayers.find(p => p.player_id === cookieVal)) {
-          chosenPlayerId = cookieVal;
-        }
-      }
-    }
+    const firstWithPlayer = myVotesRaw.find((v) => v.player_id);
+    const chosenPlayerId = user
+      ? validCookiePlayer
+      : (validCookiePlayer ?? firstWithPlayer?.player_id ?? null);
+
+    const myVotes = chosenPlayerId
+      ? myVotesRaw.filter((v) => v.player_id === chosenPlayerId)
+      : [];
 
     // counts
     const counts: Record<number, number> = {};
@@ -129,9 +132,9 @@ export const load: PageServerLoad = async ({ locals, depends, cookies }) => {
       (p) => p.player_id === chosenPlayerId || !usedSet.has(p.player_id)
     );
 
-    const isAbsent = user
-      ? absences.some((a) => a.player_id === user.id)
-      : (chosenPlayerId ? absences.some((a) => a.player_id === chosenPlayerId) : false);
+    const isAbsent = chosenPlayerId
+      ? absences.some((a) => a.player_id === chosenPlayerId)
+      : false;
 
     return {
       options,
