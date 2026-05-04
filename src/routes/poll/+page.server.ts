@@ -6,6 +6,9 @@ export const load: PageServerLoad = async ({ locals, depends, cookies }) => {
   const { user, session } = await locals.safeGetSession();
   const token = locals.voterToken;
 
+  const getIdentityCookieName = (pollId: number) =>
+    user ? `poll_identity_${pollId}_${user.id}` : `poll_identity_${pollId}_anon`;
+
   depends("poll:data");
 
   const { data: poll, error: pollErr } = await supabase
@@ -106,7 +109,7 @@ export const load: PageServerLoad = async ({ locals, depends, cookies }) => {
 
     // Try to recover from cookie if not found in votes
     if (!chosenPlayerId) {
-      const cookieName = `poll_identity_${poll.poll_id}`;
+      const cookieName = getIdentityCookieName(poll.poll_id);
       const cookieVal = cookies.get(cookieName);
       if (cookieVal) {
         // Verify the player exists in safeAllPlayers

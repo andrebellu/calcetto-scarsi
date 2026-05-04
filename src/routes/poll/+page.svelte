@@ -215,10 +215,17 @@
 
     let tempPlayerId = $state<string>("");
 
+    const identityCookieName = $derived.by(() => {
+        if (!data.poll) return null;
+        const uid = data.session?.user?.id;
+        if (uid) return `poll_identity_${data.poll.poll_id}_${uid}`;
+        return `poll_identity_${data.poll.poll_id}_anon`;
+    });
+
     async function confirmPlayerFinal() {
         chosenPlayerId = tempPlayerId;
-        if (data.poll) {
-            document.cookie = `poll_identity_${data.poll.poll_id}=${chosenPlayerId}; path=/; max-age=31536000`;
+        if (identityCookieName) {
+            document.cookie = `${identityCookieName}=${chosenPlayerId}; path=/; max-age=31536000`;
         }
     }
 
