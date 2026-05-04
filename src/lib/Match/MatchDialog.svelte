@@ -367,7 +367,7 @@
                                 {/snippet}
                             </Popover.Trigger>
                             <Popover.Content
-                                class="w-[240px] p-0 rounded-xl"
+                                class="w-60 p-0 rounded-xl"
                                 align="end"
                             >
                                 <Command.Root>
@@ -520,7 +520,7 @@
                                 {/snippet}
                             </Popover.Trigger>
                             <Popover.Content
-                                class="w-[240px] p-0 rounded-xl"
+                                class="w-60 p-0 rounded-xl"
                                 align="end"
                             >
                                 <Command.Root>

@@ -83,7 +83,6 @@
 <div class="mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
     <Navbar />
 
-    <!-- Claim modal (nascosto finché non serve) -->
     {#if showClaimModal}
         <div
             class="mb-6 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl"
@@ -128,7 +127,7 @@
         <input
             type="search"
             placeholder="Cerca giocatore…"
-            class="h-9 flex-1 min-w-[160px] rounded-lg border px-3 text-sm bg-background outline-none focus:ring-2 focus:ring-primary"
+            class="h-9 flex-1 min-w-40 rounded-lg border px-3 text-sm bg-background outline-none focus:ring-2 focus:ring-primary"
             bind:value={query}
             aria-label="Cerca giocatore"
         />

@@ -43,18 +43,18 @@
                 <p class="text-xs text-muted-foreground">
                     {formatDate(match.match_date)}
                 </p>
+                {#if match.season}
+                    <span
+                        class="shrink-0 text-[0.5rem] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary-700 dark:text-primary-300"
+                    >
+                        {match.season}
+                    </span>
+                {/if}
             </div>
-            {#if match.season}
-                <span
-                    class="flex-shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary-700 dark:text-primary-300"
-                >
-                    {match.season}
-                </span>
-            {/if}
         </div>
 
         <!-- Punteggio centrale -->
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="flex items-center gap-2 shrink-0">
             <div class="flex flex-col items-center">
                 <span
                     class="text-[10px] font-semibold text-blue-500 uppercase tracking-wider mb-1"
@@ -100,7 +100,7 @@
                     <span class="truncate text-foreground font-medium"
                         >{player.players?.name ?? player.name}</span
                     >
-                    <div class="flex items-center gap-1 flex-shrink-0">
+                    <div class="flex items-center gap-1 shrink-0">
                         {#if Number(player.goals) > 0}
                             <span
                                 class="text-xs font-semibold text-blue-600 dark:text-blue-400"
@@ -132,7 +132,7 @@
                     <span class="truncate text-foreground font-medium"
                         >{player.players?.name ?? player.name}</span
                     >
-                    <div class="flex items-center gap-1 flex-shrink-0">
+                    <div class="flex items-center gap-1 shrink-0">
                         {#if Number(player.goals) > 0}
                             <span
                                 class="text-xs font-semibold text-red-600 dark:text-red-400"
