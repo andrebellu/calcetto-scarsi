@@ -1,321 +1,259 @@
 <script lang="ts">
-  import Card from "$lib/Card/Card.svelte";
-  import CardAdd from "$lib/Card/CardAdd.svelte";
-  import Navbar from "$lib/Navbar/Navbar.svelte";
-  import { fade } from "svelte/transition";
-  import { flip } from "svelte/animate";
-  import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
-  import { enhance } from "$app/forms";
+    import Card from "$lib/Card/Card.svelte";
+    import CardAdd from "$lib/Card/CardAdd.svelte";
+    import Navbar from "$lib/Navbar/Navbar.svelte";
+    import { fade } from "svelte/transition";
+    import { flip } from "svelte/animate";
+    import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
+    import { enhance } from "$app/forms";
 
-  const { data } = $props<{
-    data: {
-      isAuthenticated: boolean;
-      currentUserPlayerId: number | null;
-      streamed: {
-        players: Promise<
-          Array<{
-            id: number;
-            name: string;
-            is_temporary: boolean;
-            is_claimable: boolean;
-            goals: number;
-            wins: number;
-            matchesPlayed: number;
-            winRate: number;
-            golPerMatch: number;
-          }>
-        >;
-      };
-    };
-  }>();
+    const { data } = $props<{
+        data: {
+            isAuthenticated: boolean;
+            currentUserPlayerId: number | null;
+            streamed: {
+                players: Promise<
+                    Array<{
+                        id: number;
+                        name: string;
+                        is_temporary: boolean;
+                        is_claimable: boolean;
+                        goals: number;
+                        wins: number;
+                        matchesPlayed: number;
+                        winRate: number;
+                        golPerMatch: number;
+                    }>
+                >;
+            };
+        };
+    }>();
 
-  let isAuthenticated = data.isAuthenticated;
-  let players = $state<any[]>([]);
-  let showClaimModal = $state(false);
-  let availablePlayers = $state<any[]>([]);
+    let isAuthenticated = data.isAuthenticated;
+    let players = $state<any[]>([]);
+    let showClaimModal = $state(false);
+    let availablePlayers = $state<any[]>([]);
 
-  $effect(() => {
-    data.streamed.players.then((res) => {
-      players = res || [];
-      // Filtra i giocatori che non hanno un user_id
-      availablePlayers = res.filter((p: any) => p.is_claimable);
-
-      // Se sono loggato MA non ho un player_id associato, mostrami la scelta
-      if (
-        data.isAuthenticated &&
-        !data.currentUserPlayerId &&
-        availablePlayers.length > 0
-      ) {
-        showClaimModal = true;
-      }
+    $effect(() => {
+        data.streamed.players.then((res) => {
+            players = res || [];
+            availablePlayers = res.filter((p: any) => p.is_claimable);
+            if (
+                data.isAuthenticated &&
+                !data.currentUserPlayerId &&
+                availablePlayers.length > 0
+            ) {
+                showClaimModal = true;
+            }
+        });
     });
-  });
 
-  let query = $state("");
-  let debounced = $state("");
-  let showTemporary = $state(true);
-  let showFixed = $state(true);
+    let query = $state("");
+    let debounced = $state("");
+    let showTemporary = $state(true);
+    let showFixed = $state(true);
 
-  let t: any;
-  $effect(() => {
-    const q = query;
-    clearTimeout(t);
-    t = setTimeout(() => (debounced = q), 250);
-    return () => clearTimeout(t);
-  });
+    let t: any;
+    $effect(() => {
+        const q = query;
+        clearTimeout(t);
+        t = setTimeout(() => (debounced = q), 250);
+        return () => clearTimeout(t);
+    });
 
-  const qLower = $derived(debounced.trim().toLowerCase());
+    const qLower = $derived(debounced.trim().toLowerCase());
 
-  const fixedPlayers = $derived(
-    players.filter((p) => {
-      if (p.is_temporary) return false;
-      if (!qLower) return true;
-      return (p.name || "").toLowerCase().includes(qLower);
-    }),
-  );
+    const fixedPlayers = $derived(
+        players.filter((p) => {
+            if (p.is_temporary) return false;
+            if (!qLower) return true;
+            return (p.name || "").toLowerCase().includes(qLower);
+        }),
+    );
 
-  const tempPlayers = $derived(
-    players.filter((p) => {
-      if (!p.is_temporary) return false;
-      if (!qLower) return true;
-      return (p.name || "").toLowerCase().includes(qLower);
-    }),
-  );
+    const tempPlayers = $derived(
+        players.filter((p) => {
+            if (!p.is_temporary) return false;
+            if (!qLower) return true;
+            return (p.name || "").toLowerCase().includes(qLower);
+        }),
+    );
 </script>
 
-<div class="mx-auto w-full max-w-7xl px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
-  <Navbar />
+<div class="mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
+    <Navbar />
 
-  {#if showClaimModal}
-    <div
-      class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl shadow-sm"
-      transition:fade
-    >
-      <h3 class="font-bold text-lg text-yellow-800 mb-2">
-        Benvenuto! Chi sei?
-      </h3>
-      <p class="text-sm text-yellow-700 mb-4">
-        Collega il tuo nuovo account al tuo storico partite. Seleziona il tuo
-        nome:
-      </p>
+    <!-- Claim modal (nascosto finché non serve) -->
+    {#if showClaimModal}
+        <div
+            class="mb-6 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl"
+            transition:fade
+        >
+            <p class="font-semibold text-amber-800 dark:text-amber-300 mb-1">
+                Benvenuto! Chi sei?
+            </p>
+            <p class="text-sm text-amber-700 dark:text-amber-400 mb-3">
+                Collega il tuo account al tuo storico partite.
+            </p>
+            <form method="POST" action="?/claim" use:enhance class="flex gap-2">
+                <select
+                    name="playerId"
+                    class="flex-1 rounded-lg border border-amber-300 bg-white dark:bg-neutral-900 px-3 py-2 text-sm"
+                >
+                    {#each availablePlayers as player}
+                        <option value={player.id}>{player.name}</option>
+                    {/each}
+                </select>
+                <button
+                    class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                    Sono io
+                </button>
+            </form>
+        </div>
+    {/if}
 
-      <form method="POST" action="?/claim" use:enhance>
-        <div class="flex gap-2">
-          <select name="playerId" class="p-2 border rounded-lg bg-white flex-1">
-            {#each availablePlayers as player}
-              <option value={player.id}>{player.name}</option>
+    <!-- Header -->
+    <div class="mb-6 sm:mb-8">
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Giocatori</h1>
+        <p class="text-sm text-muted-foreground mt-1">
+            {#await data.streamed.players then p}
+                {p?.length ?? 0} giocatori · statistiche aggregate per stagione
+            {/await}
+        </p>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="flex flex-wrap gap-2 mb-6 items-center">
+        <input
+            type="search"
+            placeholder="Cerca giocatore…"
+            class="h-9 flex-1 min-w-[160px] rounded-lg border px-3 text-sm bg-background outline-none focus:ring-2 focus:ring-primary"
+            bind:value={query}
+            aria-label="Cerca giocatore"
+        />
+
+        <button
+            type="button"
+            class="h-9 px-3 rounded-lg text-sm font-medium border transition-colors
+        {showFixed
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'text-muted-foreground hover:text-foreground'}"
+            onclick={() => (showFixed = !showFixed)}
+            aria-pressed={showFixed}
+        >
+            Fissi {#if fixedPlayers.length > 0}<span
+                    class="opacity-60 font-normal">({fixedPlayers.length})</span
+                >{/if}
+        </button>
+
+        <button
+            type="button"
+            class="h-9 px-3 rounded-lg text-sm font-medium border transition-colors
+        {showTemporary
+                ? 'bg-red-500 text-white border-red-500'
+                : 'text-muted-foreground hover:text-foreground'}"
+            onclick={() => (showTemporary = !showTemporary)}
+            aria-pressed={showTemporary}
+        >
+            Temporanei {#if tempPlayers.length > 0}<span
+                    class="opacity-70 font-normal">({tempPlayers.length})</span
+                >{/if}
+        </button>
+    </div>
+
+    {#await data.streamed.players}
+        <div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {#each [1, 2, 3, 4, 5, 6] as _}
+                <Skeleton class="h-40 w-full rounded-2xl" />
             {/each}
-          </select>
-          <button
-            class="bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700"
-          >
-            Sono io
-          </button>
         </div>
-      </form>
-    </div>
-  {/if}
+    {:then _}
+        <!-- Giocatori fissi -->
+        {#if showFixed}
+            <section
+                class="mb-8"
+                in:fade={{ duration: 100 }}
+                out:fade={{ duration: 80 }}
+            >
+                <div class="flex items-center justify-between mb-3">
+                    <h2
+                        class="text-sm font-semibold text-muted-foreground uppercase tracking-wider"
+                    >
+                        Giocatori fissi
+                    </h2>
+                </div>
+                <div
+                    class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                >
+                    {#each fixedPlayers as player (player.name)}
+                        <div animate:flip>
+                            <Card
+                                name={player.name}
+                                goals={player.goals}
+                                wins={player.wins}
+                                matchesPlayed={player.matchesPlayed}
+                                winRate={player.winRate}
+                                golPerMatch={player.golPerMatch}
+                            />
+                        </div>
+                    {/each}
+                    <CardAdd {isAuthenticated} temp={false} />
+                </div>
+            </section>
+        {/if}
 
-  <header
-    class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
-  >
-    <div>
-      <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-500">
-        Giocatori
-      </h1>
-      <p class="text-[13px] sm:text-sm text-muted-foreground mt-1">
-        Elenco completo dei giocatori fissi e temporanei con statistiche
-        aggregate.
-      </p>
-    </div>
+        <!-- Giocatori temporanei -->
+        {#if showTemporary}
+            <section
+                class="mb-8"
+                in:fade={{ duration: 100 }}
+                out:fade={{ duration: 80 }}
+            >
+                <div class="flex items-center justify-between mb-3">
+                    <h2
+                        class="text-sm font-semibold text-muted-foreground uppercase tracking-wider"
+                    >
+                        Giocatori temporanei
+                    </h2>
+                </div>
+                <div
+                    class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                >
+                    {#each tempPlayers as player (player.name)}
+                        <div animate:flip>
+                            <Card
+                                name={player.name}
+                                goals={player.goals}
+                                wins={player.wins}
+                                matchesPlayed={player.matchesPlayed}
+                                winRate={player.winRate}
+                                golPerMatch={player.golPerMatch}
+                            />
+                        </div>
+                    {/each}
+                    <CardAdd {isAuthenticated} temp={true} />
+                </div>
+            </section>
+        {/if}
 
-    <section
-      aria-labelledby="legend-title"
-      class="rounded-lg p-3 sm:p-4 bg-accent/10 border border-accent/30"
-    >
-      <h2 id="legend-title" class="sr-only">Legenda simboli</h2>
-
-      <dl
-        class="flex items-center gap-2 sm:gap-3 overflow-x-auto sm:overflow-visible no-scrollbar
-           text-[11px] sm:text-sm text-muted-foreground px-1 sm:flex-wrap"
-      >
-        <div class="flex items-center gap-1 shrink-0">
-          <dt
-            aria-hidden="true"
-            class="material-symbols-outlined text-[15px] text-green-600"
-          >
-            sports_soccer
-          </dt>
-          <dd>Gol</dd>
-        </div>
-
-        <div class="flex items-center gap-1 shrink-0">
-          <dt
-            aria-hidden="true"
-            class="material-symbols-outlined text-[15px] text-blue-600"
-          >
-            stadium
-          </dt>
-          <dd>Presenze</dd>
-        </div>
-
-        <div class="flex items-center gap-1 shrink-0">
-          <dt
-            aria-hidden="true"
-            class="material-symbols-outlined text-[15px] text-yellow-600"
-          >
-            bar_chart
-          </dt>
-          <dd>Gol/Partita</dd>
-        </div>
-
-        <div class="flex items-center gap-1 shrink-0">
-          <dt
-            aria-hidden="true"
-            class="material-symbols-outlined text-[15px] text-purple-500"
-          >
-            emoji_events
-          </dt>
-          <dd>Vittorie</dd>
-        </div>
-
-        <div class="flex items-center gap-1 shrink-0">
-          <dt
-            aria-hidden="true"
-            class="material-symbols-outlined text-[15px] text-pink-600"
-          >
-            percent
-          </dt>
-          <dd>Win%</dd>
-        </div>
-      </dl>
-    </section>
-  </header>
-
-  <!-- Toolbar -->
-  <div
-    class="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center mb-4 sm:mb-6"
-  >
-    <input
-      type="search"
-      placeholder="Cerca giocatore…"
-      class="w-full sm:w-auto flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-      bind:value={query}
-      aria-label="Cerca giocatore"
-    />
-
-    <div class="flex gap-2 overflow-x-auto no-scrollbar">
-      <button
-        type="button"
-        class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all hover:bg-primary hover:text-white"
-        class:bg-primary={showFixed}
-        class:text-white={showFixed}
-        onclick={() => (showFixed = !showFixed)}
-        aria-pressed={showFixed}
-      >
-        {showFixed ? "Mostra fissi ✓" : "Mostra fissi"}
-      </button>
-
-      <button
-        type="button"
-        class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all hover:bg-primary hover:text-white"
-        class:bg-primary={showTemporary}
-        class:text-white={showTemporary}
-        onclick={() => (showTemporary = !showTemporary)}
-        aria-pressed={showTemporary}
-      >
-        {showTemporary ? "Mostra temporanei ✓" : "Mostra temporanei"}
-      </button>
-    </div>
-  </div>
-
-  {#await data.streamed.players}
-    <div class="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-3 mb-8">
-      <Skeleton class="h-48 w-full rounded-xl" />
-      <Skeleton class="h-48 w-full rounded-xl" />
-      <Skeleton class="h-48 w-full rounded-xl" />
-    </div>
-  {:then _}
-    <!-- Fissi -->
-    {#if showFixed}
-      <section
-        class="mb-8 sm:mb-12"
-        in:fade={{ duration: 120 }}
-        out:fade={{ duration: 90 }}
-      >
-        <div class="flex items-baseline justify-between mb-3 sm:mb-4">
-          <h2
-            class="text-xl sm:text-2xl md:text-3xl font-bold text-primary-600"
-          >
-            Giocatori fissi
-          </h2>
-          <span class="text-xs sm:text-sm text-muted-foreground">
-            {fixedPlayers.length} elementi
-          </span>
-        </div>
-
-        <div class="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-3">
-          {#each fixedPlayers as player (player.name)}
-            <div animate:flip>
-              <Card
-                name={player.name}
-                goals={player.goals}
-                wins={player.wins}
-                matchesPlayed={player.matchesPlayed}
-                winRate={player.winRate}
-                golPerMatch={player.golPerMatch}
-              />
+        <!-- Empty state ricerca -->
+        {#if qLower && fixedPlayers.length === 0 && tempPlayers.length === 0}
+            <div
+                class="flex flex-col items-center justify-center py-20 gap-2 text-center"
+                in:fade
+            >
+                <span
+                    class="material-symbols-outlined text-4xl text-muted-foreground/40"
+                    >search_off</span
+                >
+                <p class="font-medium">Nessun giocatore trovato</p>
+                <p class="text-sm text-muted-foreground">
+                    Nessun risultato per "<span class="font-medium"
+                        >{query}</span
+                    >"
+                </p>
             </div>
-          {/each}
-
-          <CardAdd {isAuthenticated} temp={false} />
-        </div>
-      </section>
-    {/if}
-
-    <!-- Temporanei -->
-    {#if showTemporary}
-      <section
-        class="mb-8 sm:mb-12"
-        in:fade={{ duration: 120 }}
-        out:fade={{ duration: 90 }}
-      >
-        <div class="flex items-baseline justify-between mb-3 sm:mb-4">
-          <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-red-600">
-            Giocatori temporanei
-          </h2>
-          <span class="text-xs sm:text-sm text-muted-foreground">
-            {tempPlayers.length} elementi
-          </span>
-        </div>
-
-        <div class="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-3">
-          {#each tempPlayers as player (player.name)}
-            <div animate:flip>
-              <Card
-                name={player.name}
-                goals={player.goals}
-                wins={player.wins}
-                matchesPlayed={player.matchesPlayed}
-                winRate={player.winRate}
-                golPerMatch={player.golPerMatch}
-              />
-            </div>
-          {/each}
-
-          <CardAdd {isAuthenticated} temp={true} />
-        </div>
-      </section>
-    {/if}
-  {/await}
+        {/if}
+    {/await}
 </div>
-
-<style>
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-</style>
