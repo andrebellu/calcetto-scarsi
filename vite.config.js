@@ -8,11 +8,7 @@ export default defineConfig({
     sveltekit(),
     tailwindcss(),
     SvelteKitPWA({
-      strategies: "injectManifest",
-      injectManifest: {
-        swSrc: "src/service-worker.ts",
-        swDest: "service-worker.js",
-      },
+      strategies: "generateSW",
 
       devOptions: {
         enabled: false,

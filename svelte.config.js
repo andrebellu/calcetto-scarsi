@@ -14,9 +14,6 @@ const config = {
       minimumCacheTTL: 300,
       domains: ["calcetto-scarsi.vercel.app"],
     }),
-    files: {
-      serviceWorker: "src/service-worker.ts",
-    },
   },
 };
 
