@@ -1,7 +1,7 @@
 <script>
 	import { cn } from "$lib/utils.js";
 	import { getPayloadConfigFromPayload, useChart } from "./chart-utils.js";
-	import { getTooltipContext, Tooltip as TooltipPrimitive } from "layerchart";
+	import { Tooltip as TooltipPrimitive } from "layerchart";
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	function defaultFormatter(value, _payload) {
 		return `${value}`;
@@ -24,7 +24,7 @@
 	} = $props();
 
 	const chart = useChart();
-	const tooltipCtx = getTooltipContext();
+	const tooltipCtx = TooltipPrimitive.getTooltipContext();
 
 	const formattedLabel = $derived.by(() => {
 		if (hideLabel || !tooltipCtx.payload?.length) return null;
