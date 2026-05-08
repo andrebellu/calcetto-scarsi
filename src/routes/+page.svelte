@@ -113,7 +113,7 @@
                                 weekday: "long",
                                 day: "2-digit",
                                 month: "long",
-                            })} · ore da concordare su Whatsapp
+                            })} · orario da concordare su Whatsapp
                         </p>
                     </div>
                 </div>
