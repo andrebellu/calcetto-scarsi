@@ -1,175 +1,504 @@
 <script lang="ts">
     import type { PageData } from "./$types";
+    import ChevronLeft from "@lucide/svelte/icons/chevron-left";
+    import Shuffle from "@lucide/svelte/icons/shuffle";
+    import Save from "@lucide/svelte/icons/save";
+    import Trash2 from "@lucide/svelte/icons/trash-2";
+    import { shuffle } from "$lib/utils/random";
+    import { toast } from "svelte-sonner";
+    import { Toaster } from "svelte-sonner";
     export let data: PageData;
 
     const partita = data.prossimaPartita;
+    const fixtureId = partita?.fixture_id ?? null;
 
-    const orderedA = (data.squads?.A ?? [])
+    type SquadPlayer = {
+        player_id: string;
+        name: string;
+        is_goalkeeper: boolean;
+        gk_order?: number;
+    };
+
+    let squadsA: SquadPlayer[] = [...(data.squads?.A ?? [])];
+    let squadsB: SquadPlayer[] = [...(data.squads?.B ?? [])];
+    let squadsP: SquadPlayer[] = [...(data.squads?.P ?? [])];
+
+    $: orderedA = squadsA
         .slice()
         .sort(
             (p1, p2) =>
                 (p1.gk_order ?? Number.MAX_SAFE_INTEGER) -
                 (p2.gk_order ?? Number.MAX_SAFE_INTEGER),
         );
-    const orderedB = (data.squads?.B ?? [])
+    $: orderedB = squadsB
         .slice()
         .sort(
             (p1, p2) =>
                 (p1.gk_order ?? Number.MAX_SAFE_INTEGER) -
                 (p2.gk_order ?? Number.MAX_SAFE_INTEGER),
         );
-    const orderedP = (data.squads?.P ?? []).slice();
+    $: orderedP = squadsP.slice();
+
+    const itDate = new Intl.DateTimeFormat("it-IT", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+    });
+    function formatDate(d: string | null | undefined) {
+        if (!d) return d;
+        const dt = new Date(d);
+        return Number.isFinite(dt.getTime()) ? itDate.format(dt) : d;
+    }
+
+    function removeFromAllTeams(player_id: string) {
+        squadsA = squadsA.filter((p) => p.player_id !== player_id);
+        squadsB = squadsB.filter((p) => p.player_id !== player_id);
+        squadsP = squadsP.filter((p) => p.player_id !== player_id);
+    }
+
+    function moveTo(player: SquadPlayer, dest: "A" | "B" | "P") {
+        removeFromAllTeams(player.player_id);
+        if (dest === "A") squadsA = [...squadsA, player];
+        if (dest === "B") squadsB = [...squadsB, player];
+        if (dest === "P") squadsP = [...squadsP, player];
+    }
+
+    // Sposta nella lista "Convocati" (disponibili) — era il problema mancante
+    function returnToPool(player: SquadPlayer) {
+        removeFromAllTeams(player.player_id);
+        squadsP = [...squadsP, player];
+    }
+
+    function handleDragStart(event: DragEvent, player: SquadPlayer) {
+        event.dataTransfer?.setData("application/json", JSON.stringify(player));
+        if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    }
+
+    function handleDrop(event: DragEvent, dest: "A" | "B" | "P") {
+        event.preventDefault();
+        const text = event.dataTransfer?.getData("application/json");
+        if (!text) return;
+        moveTo(JSON.parse(text) as SquadPlayer, dest);
+    }
+
+    function generateTeams() {
+        const allPlayers = [...squadsP, ...squadsA, ...squadsB];
+        if (!allPlayers.length) return;
+        shuffle(allPlayers, Math.random);
+        const mid = Math.ceil(allPlayers.length / 2);
+        squadsA = allPlayers.slice(0, mid);
+        squadsB = allPlayers.slice(mid);
+        squadsP = [];
+        toast.success("Squadre generate casualmente");
+    }
+
+    async function saveTeams() {
+        if (!fixtureId) {
+            toast.error("Fixture non disponibile");
+            return;
+        }
+        const players = [
+            ...squadsA.map((p) => ({
+                player_id: p.player_id,
+                team: "A" as const,
+                is_goalkeeper: p.is_goalkeeper,
+            })),
+            ...squadsB.map((p) => ({
+                player_id: p.player_id,
+                team: "B" as const,
+                is_goalkeeper: p.is_goalkeeper,
+            })),
+            ...squadsP.map((p) => ({
+                player_id: p.player_id,
+                team: "P" as const,
+                is_goalkeeper: p.is_goalkeeper,
+            })),
+        ];
+        const res = await fetch(`/api/fixture/${fixtureId}/players`, {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ players }),
+        });
+        if (!res.ok) {
+            toast.error("Errore salvataggio squadre");
+            return;
+        }
+        toast.success("Squadre salvate");
+    }
 </script>
 
-<div class="mx-auto w-full max-w-4xl px-4 py-6 md:py-10">
-    <header class="mb-5 md:mb-8 text-center">
-        <h1 class="text-3xl font-extrabold tracking-tight md:text-4xl">
+<Toaster position="top-center" richColors />
+
+<!-- Top nav -->
+<div
+    class="sticky top-0 z-20 backdrop-blur-md bg-background/80 border-b border-border/50"
+>
+    <div
+        class="mx-auto max-w-4xl px-4 sm:px-6 h-14 flex items-center justify-between"
+    >
+        <a
+            href="/"
+            class="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+            <ChevronLeft class="size-4" />
+            Home
+        </a>
+        {#if data.isAuthenticated}
+            <a
+                href="/poll"
+                class="text-sm font-medium text-primary hover:underline"
+                >Crea sondaggio →</a
+            >
+        {/if}
+    </div>
+</div>
+
+<main class="mx-auto w-full max-w-4xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
+    <!-- Header -->
+    <div class="space-y-1">
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
             Convocazioni
         </h1>
-
         {#if data.dataDecisa && partita}
-            <div
-                class="mt-3 inline-flex flex-col items-center gap-2 rounded-2xl border px-4 py-3 text-surface-700 shadow-sm md:px-5"
-            >
-                <p class="text-base leading-tight">
-                    Prossima partita:
-                    <span class="font-semibold">{partita.luogo}</span>
-                    • <span class="font-semibold">{partita.data}</span>
-                </p>
-                <p class="text-xs text-surface-500">
-                    Orario da definire sul gruppo WhatsApp.
-                </p>
-                <p class="text-sm text-surface-500">
-                    Ricordarsi di arrivare <span class="font-semibold"
-                        >30 min</span
-                    > prima.
-                </p>
-            </div>
+            <p class="text-sm text-muted-foreground">
+                {formatDate(partita.data)} · {partita.luogo}{#if partita.ora}
+                    · ore {partita.ora}{/if}
+            </p>
         {:else}
-            <p class="mt-3 text-surface-600">
+            <p class="text-sm text-muted-foreground">
                 Nessuna convocazione confermata.
             </p>
         {/if}
-
-        <nav class="mt-4 flex items-center justify-center gap-4">
-            <a href="/" class="text-primary-600 underline">Torna alla home</a>
-            {#if data.isAuthenticated}
-                <a href="/poll" class="text-secondary-600 underline"
-                    >Crea nuovo sondaggio</a
-                >
-            {/if}
-        </nav>
-    </header>
+    </div>
 
     {#if data.dataDecisa && data.squads}
-        <!-- Dettagli partita (mobile-first) -->
-        <section class="mb-4 block md:hidden">
-            <div class="rounded-xl bg-surface-100/60 border p-4">
-                <h2 class="text-lg font-semibold mb-1">Dettagli partita</h2>
-                <p class="text-sm text-surface-600">
-                    {partita?.luogo} — {partita?.data} — {partita?.ora}
-                </p>
-            </div>
-        </section>
-
-        <!-- Squadre -->
-        <section class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <!-- Squadra A: bordo rosso -->
-            <div
-                class="rounded-2xl border border-red-400 p-4 shadow-sm backdrop-blur"
+        <!-- Info pills -->
+        <div class="flex flex-wrap gap-2">
+            <span
+                class="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground"
             >
-                <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-lg font-bold">Squadra A</h2>
-                    <span
-                        class="text-xs rounded-full bg-red-100 text-red-700 px-2 py-0.5"
-                    >
-                        {data.squads.A.length} convocati
-                    </span>
-                </div>
-
-                {#if data.squads.A.length > 0}
-                    <ul class="divide-y divide-red-100">
-                        {#each data.squads.A as p (p.player_id)}
-                            <li class="flex items-center justify-between py-2">
-                                <span class="text-sm">{p.name}</span>
-                                {#if p.is_goalkeeper}
-                                    <span
-                                        class="text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800"
-                                        >GK</span
-                                    >
-                                {/if}
-                            </li>
-                        {/each}
-                    </ul>
-                {:else}
-                    <p class="text-sm text-muted-foreground">
-                        Nessun giocatore assegnato
-                    </p>
-                {/if}
-            </div>
-
-            <!-- Squadra B: bordo blu -->
-            <div
-                class="rounded-2xl border border-blue-400 p-4 shadow-sm backdrop-blur"
+                <span class="material-symbols-outlined !text-[14px]"
+                    >schedule</span
+                >
+                Arriva 30 min prima
+            </span>
+            <span
+                class="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground"
             >
-                <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-lg font-bold">Squadra B</h2>
-                    <span
-                        class="text-xs rounded-full bg-blue-100 text-blue-700 px-2 py-0.5"
-                    >
-                        {data.squads.B.length} convocati
-                    </span>
-                </div>
+                <span class="material-symbols-outlined !text-[14px]"
+                    >groups</span
+                >
+                {orderedA.length + orderedB.length + orderedP.length} convocati totali
+            </span>
+        </div>
 
-                {#if data.squads.B.length > 0}
-                    <ul class="divide-y divide-blue-100">
-                        {#each data.squads.B as p (p.player_id)}
-                            <li class="flex items-center justify-between py-2">
-                                <span class="text-sm">{p.name}</span>
-                                {#if p.is_goalkeeper}
-                                    <span
-                                        class="text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800"
-                                        >GK</span
-                                    >
-                                {/if}
-                            </li>
-                        {/each}
-                    </ul>
-                {:else}
-                    <p class="text-sm text-muted-foreground">
-                        Nessun giocatore assegnato
-                    </p>
-                {/if}
-            </div>
-        </section>
-
-        {#if orderedP.length > 0}
+        <!-- ── ADMIN: gestione squadre ── -->
+        {#if data.isAuthenticated}
             <section
-                class="mt-4 rounded-2xl border border-surface-300 bg-surface-100/50 p-4 shadow-sm"
+                class="rounded-2xl border bg-card shadow-sm overflow-hidden"
             >
-                <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-lg font-bold">Convocati</h2>
-                    <span
-                        class="text-xs rounded-full bg-surface-200 text-surface-700 px-2 py-0.5"
-                    >
-                        {orderedP.length} convocati
-                    </span>
+                <div
+                    class="px-4 py-3 border-b bg-muted/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                >
+                    <div>
+                        <h2 class="font-semibold">Gestione squadre</h2>
+                        <p class="text-xs text-muted-foreground mt-0.5">
+                            Trascina i giocatori tra le colonne oppure usa i
+                            pulsanti. Clicca × per rimettere un giocatore nei
+                            disponibili.
+                        </p>
+                    </div>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors disabled:opacity-40"
+                            onclick={generateTeams}
+                            disabled={orderedP.length +
+                                orderedA.length +
+                                orderedB.length ===
+                                0}
+                        >
+                            <Shuffle class="size-3.5" /> Genera
+                        </button>
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40"
+                            onclick={saveTeams}
+                            disabled={!fixtureId}
+                        >
+                            <Save class="size-3.5" /> Salva
+                        </button>
+                    </div>
                 </div>
 
-                <ul class="divide-y divide-surface-200">
-                    {#each orderedP as p (p.player_id)}
-                        <li class="flex items-center justify-between py-2">
-                            <span class="text-sm">{p.name}</span>
+                <div class="grid grid-cols-1 gap-0 md:grid-cols-3 md:divide-x">
+                    <!-- Disponibili -->
+                    <div
+                        class="p-3 space-y-2"
+                        ondrop={(e) => handleDrop(e, "P")}
+                        ondragover={(e) => e.preventDefault()}
+                    >
+                        <p
+                            class="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1"
+                        >
+                            Disponibili <span class="font-normal"
+                                >({orderedP.length})</span
+                            >
+                        </p>
+                        <ul class="space-y-1.5 min-h-[160px]">
+                            {#each orderedP as player (player.player_id)}
+                                <li
+                                    draggable="true"
+                                    ondragstart={(e) =>
+                                        handleDragStart(e, player)}
+                                    class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted cursor-grab active:cursor-grabbing border border-transparent hover:border-border transition-all"
+                                >
+                                    <span class="text-sm font-medium truncate"
+                                        >{player.name}</span
+                                    >
+                                    <div class="flex gap-1 flex-shrink-0">
+                                        <button
+                                            class="size-5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                                            onclick={() => moveTo(player, "A")}
+                                            >A</button
+                                        >
+                                        <button
+                                            class="size-5 rounded text-[10px] font-bold bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                                            onclick={() => moveTo(player, "B")}
+                                            >B</button
+                                        >
+                                    </div>
+                                </li>
+                            {/each}
+                            {#if orderedP.length === 0}
+                                <li
+                                    class="flex items-center justify-center h-28 text-xs text-muted-foreground italic"
+                                >
+                                    Trascina qui
+                                </li>
+                            {/if}
+                        </ul>
+                    </div>
+
+                    <!-- Squadra A -->
+                    <div
+                        class="p-3 space-y-2 border-t md:border-t-0"
+                        ondrop={(e) => handleDrop(e, "A")}
+                        ondragover={(e) => e.preventDefault()}
+                    >
+                        <p
+                            class="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider px-1"
+                        >
+                            Squadra Finocchi <span
+                                class="font-normal text-muted-foreground"
+                                >({orderedA.length})</span
+                            >
+                        </p>
+                        <ul class="space-y-1.5 min-h-[160px]">
+                            {#each orderedA as player (player.player_id)}
+                                <li
+                                    draggable="true"
+                                    ondragstart={(e) =>
+                                        handleDragStart(e, player)}
+                                    class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 cursor-grab active:cursor-grabbing"
+                                >
+                                    <span class="text-sm font-medium truncate"
+                                        >{player.name}</span
+                                    >
+                                    <div
+                                        class="flex items-center gap-1 flex-shrink-0"
+                                    >
+                                        {#if player.is_goalkeeper}
+                                            <span
+                                                class="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 font-medium"
+                                                >GK</span
+                                            >
+                                        {/if}
+                                        <button
+                                            class="size-5 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                            onclick={() => returnToPool(player)}
+                                            title="Rimuovi dalla squadra"
+                                        >
+                                            <Trash2 class="size-3" />
+                                        </button>
+                                    </div>
+                                </li>
+                            {/each}
+                            {#if orderedA.length === 0}
+                                <li
+                                    class="flex items-center justify-center h-28 text-xs text-blue-400 italic"
+                                >
+                                    Trascina qui
+                                </li>
+                            {/if}
+                        </ul>
+                    </div>
+
+                    <!-- Squadra B -->
+                    <div
+                        class="p-3 space-y-2 border-t md:border-t-0"
+                        ondrop={(e) => handleDrop(e, "B")}
+                        ondragover={(e) => e.preventDefault()}
+                    >
+                        <p
+                            class="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider px-1"
+                        >
+                            Squadra Pomodori <span
+                                class="font-normal text-muted-foreground"
+                                >({orderedB.length})</span
+                            >
+                        </p>
+                        <ul class="space-y-1.5 min-h-[160px]">
+                            {#each orderedB as player (player.player_id)}
+                                <li
+                                    draggable="true"
+                                    ondragstart={(e) =>
+                                        handleDragStart(e, player)}
+                                    class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-red-50/60 dark:bg-red-950/20 border border-red-100 dark:border-red-900/40 cursor-grab active:cursor-grabbing"
+                                >
+                                    <span class="text-sm font-medium truncate"
+                                        >{player.name}</span
+                                    >
+                                    <div
+                                        class="flex items-center gap-1 flex-shrink-0"
+                                    >
+                                        {#if player.is_goalkeeper}
+                                            <span
+                                                class="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 font-medium"
+                                                >GK</span
+                                            >
+                                        {/if}
+                                        <button
+                                            class="size-5 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                            onclick={() => returnToPool(player)}
+                                            title="Rimuovi dalla squadra"
+                                        >
+                                            <Trash2 class="size-3" />
+                                        </button>
+                                    </div>
+                                </li>
+                            {/each}
+                            {#if orderedB.length === 0}
+                                <li
+                                    class="flex items-center justify-center h-28 text-xs text-red-400 italic"
+                                >
+                                    Trascina qui
+                                </li>
+                            {/if}
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        {/if}
+
+        <!-- ── VISTA PUBBLICA: squadre read-only ── -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div
+                class="rounded-2xl border border-blue-200 dark:border-blue-900 overflow-hidden"
+            >
+                <div
+                    class="px-4 py-3 bg-blue-50/60 dark:bg-blue-950/20 border-b border-blue-200 dark:border-blue-900 flex items-center justify-between"
+                >
+                    <h2 class="font-semibold text-blue-700 dark:text-blue-400">
+                        Squadra Pomodori
+                    </h2>
+                    <span
+                        class="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full"
+                        >{orderedA.length}</span
+                    >
+                </div>
+                <ul class="divide-y divide-blue-100 dark:divide-blue-900/30">
+                    {#each orderedA as p (p.player_id)}
+                        <li
+                            class="flex items-center justify-between px-4 py-2.5"
+                        >
+                            <span class="text-sm font-medium">{p.name}</span>
                             {#if p.is_goalkeeper}
                                 <span
-                                    class="text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800"
+                                    class="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 font-medium"
+                                    >GK</span
+                                >
+                            {/if}
+                        </li>
+                    {/each}
+                    {#if orderedA.length === 0}
+                        <li
+                            class="px-4 py-4 text-sm text-muted-foreground italic"
+                        >
+                            Nessun giocatore assegnato
+                        </li>
+                    {/if}
+                </ul>
+            </div>
+
+            <div
+                class="rounded-2xl border border-red-200 dark:border-red-900 overflow-hidden"
+            >
+                <div
+                    class="px-4 py-3 bg-red-50/60 dark:bg-red-950/20 border-b border-red-200 dark:border-red-900 flex items-center justify-between"
+                >
+                    <h2 class="font-semibold text-red-700 dark:text-red-400">
+                        Squadra Finocchi
+                    </h2>
+                    <span
+                        class="text-xs font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/40 px-2 py-0.5 rounded-full"
+                        >{orderedB.length}</span
+                    >
+                </div>
+                <ul class="divide-y divide-red-100 dark:divide-red-900/30">
+                    {#each orderedB as p (p.player_id)}
+                        <li
+                            class="flex items-center justify-between px-4 py-2.5"
+                        >
+                            <span class="text-sm font-medium">{p.name}</span>
+                            {#if p.is_goalkeeper}
+                                <span
+                                    class="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 font-medium"
+                                    >GK</span
+                                >
+                            {/if}
+                        </li>
+                    {/each}
+                    {#if orderedB.length === 0}
+                        <li
+                            class="px-4 py-4 text-sm text-muted-foreground italic"
+                        >
+                            Nessun giocatore assegnato
+                        </li>
+                    {/if}
+                </ul>
+            </div>
+        </div>
+
+        {#if orderedP.length > 0}
+            <div class="rounded-2xl border overflow-hidden">
+                <div
+                    class="px-4 py-3 bg-muted/30 border-b flex items-center justify-between"
+                >
+                    <h2 class="font-semibold text-muted-foreground">
+                        Convocati
+                    </h2>
+                    <span
+                        class="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full"
+                        >{orderedP.length}</span
+                    >
+                </div>
+                <ul class="divide-y">
+                    {#each orderedP as p (p.player_id)}
+                        <li
+                            class="flex items-center justify-between px-4 py-2.5"
+                        >
+                            <span class="text-sm font-medium">{p.name}</span>
+                            {#if p.is_goalkeeper}
+                                <span
+                                    class="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 font-medium"
                                     >GK</span
                                 >
                             {/if}
                         </li>
                     {/each}
                 </ul>
-            </section>
+            </div>
         {/if}
     {/if}
-</div>
+</main>
