@@ -18,6 +18,7 @@
                 (p1.gk_order ?? Number.MAX_SAFE_INTEGER) -
                 (p2.gk_order ?? Number.MAX_SAFE_INTEGER),
         );
+    const orderedP = (data.squads?.P ?? []).slice();
 </script>
 
 <div class="mx-auto w-full max-w-4xl px-4 py-6 md:py-10">
@@ -141,5 +142,34 @@
                 {/if}
             </div>
         </section>
+
+        {#if orderedP.length > 0}
+            <section
+                class="mt-4 rounded-2xl border border-surface-300 bg-surface-100/50 p-4 shadow-sm"
+            >
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-lg font-bold">Convocati</h2>
+                    <span
+                        class="text-xs rounded-full bg-surface-200 text-surface-700 px-2 py-0.5"
+                    >
+                        {orderedP.length} convocati
+                    </span>
+                </div>
+
+                <ul class="divide-y divide-surface-200">
+                    {#each orderedP as p (p.player_id)}
+                        <li class="flex items-center justify-between py-2">
+                            <span class="text-sm">{p.name}</span>
+                            {#if p.is_goalkeeper}
+                                <span
+                                    class="text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800"
+                                    >GK</span
+                                >
+                            {/if}
+                        </li>
+                    {/each}
+                </ul>
+            </section>
+        {/if}
     {/if}
 </div>

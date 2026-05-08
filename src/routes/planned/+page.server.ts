@@ -20,6 +20,65 @@ export const load: PageServerLoad = async ({ locals }) => {
     return { isAuthenticated, dataDecisa: false, prossimaPartita: null, squads: null };
   }
 
+  const buildFallbackConvocati = async () => {
+    const { data: options, error: optionsErr } = await supabase
+      .from('poll_option')
+      .select('option_id, match_date, luogo, time_of_day')
+      .eq('poll_id', fx.poll_id);
+    if (optionsErr) throw optionsErr;
+
+    const dayOptions = (options ?? []).filter((option) => {
+      const sameDate = option.match_date === fx.match_date;
+      const sameLocation = !fx.luogo || (option.luogo ?? null) === fx.luogo;
+      return sameDate && sameLocation;
+    });
+
+    const voteRows = await Promise.all(
+      dayOptions.map(async (option) => {
+        const { data: votes, error: votesErr } = await supabase
+          .from('poll_vote')
+          .select('option_id')
+          .eq('poll_id', fx.poll_id)
+          .eq('option_id', option.option_id)
+          .eq('choice', 'yes');
+        if (votesErr) throw votesErr;
+        return { option_id: option.option_id, votes: votes?.length ?? 0, match_date: option.match_date ?? '', time_of_day: option.time_of_day ?? '' };
+      })
+    );
+
+    voteRows.sort((a, b) => {
+      if (b.votes !== a.votes) return b.votes - a.votes;
+      if (a.match_date !== b.match_date) return a.match_date < b.match_date ? -1 : 1;
+      if (a.time_of_day !== b.time_of_day) return a.time_of_day < b.time_of_day ? -1 : 1;
+      return a.option_id - b.option_id;
+    });
+
+    const selectedOptionId = voteRows[0]?.option_id;
+    if (!selectedOptionId) return [] as Array<{ player_id: string; name: string; is_goalkeeper: boolean; gk_order?: number }>;
+
+    const { data: voters, error: votersErr } = await supabase
+      .from('poll_vote')
+      .select('player_id, players!inner(name)')
+      .eq('poll_id', fx.poll_id)
+      .eq('option_id', selectedOptionId)
+      .eq('choice', 'yes');
+    if (votersErr) throw votersErr;
+
+    const seen = new Set<string>();
+    return (voters ?? [])
+      .map((row: any) => ({
+        player_id: row.player_id,
+        name: row.players?.name ?? 'N/D',
+        is_goalkeeper: false,
+        gk_order: undefined,
+      }))
+      .filter((row) => {
+        if (seen.has(row.player_id)) return false;
+        seen.add(row.player_id);
+        return true;
+      });
+  };
+
   // assegnazioni: A/B
   const { data: rows } = await supabase
     .from('fixture_player')
@@ -38,6 +97,10 @@ export const load: PageServerLoad = async ({ locals }) => {
     if (r.team === 'A') squads.A.push(item);
     else if (r.team === 'B') squads.B.push(item);
     else squads.P.push(item);
+  }
+
+  if (!rows || rows.length === 0) {
+    squads.P = await buildFallbackConvocati();
   }
 
   const prossimaPartita = {

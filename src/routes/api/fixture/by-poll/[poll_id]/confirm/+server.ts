@@ -99,7 +99,67 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       created_fixture = true;
     }
 
-    if (Array.isArray(body.players) && body.players.length > 0) {
+    let playersToPersist = Array.isArray(body.players) ? body.players : [];
+
+    if (playersToPersist.length === 0) {
+      let winnerOptionId = body.option_id;
+      if (!winnerOptionId) {
+        const { data: options, error: optErr } = await supabase
+          .from("poll_option")
+          .select("option_id, match_date, time_of_day, luogo")
+          .eq("poll_id", poll_id);
+        if (optErr) throw optErr;
+        if (!options?.length) throw error(400, "No options for this poll");
+
+        const { data: votes, error: vErr } = await supabase
+          .from("poll_vote")
+          .select("option_id, choice")
+          .eq("poll_id", poll_id)
+          .eq("choice", "yes");
+        if (vErr) throw vErr;
+
+        const counts = new Map<number, number>();
+        for (const v of votes ?? [])
+          counts.set(v.option_id, (counts.get(v.option_id) ?? 0) + 1);
+        const ranked = options.slice().sort((a, b) => {
+          const ca = counts.get(a.option_id) ?? 0;
+          const cb = counts.get(b.option_id) ?? 0;
+          if (cb !== ca) return cb - ca;
+          const da = a.match_date ?? "";
+          const db = b.match_date ?? "";
+          if (da !== db) return da < db ? -1 : 1;
+          const ta = a.time_of_day ?? "";
+          const tb = b.time_of_day ?? "";
+          if (ta !== tb) return ta < tb ? -1 : 1;
+          return a.option_id - b.option_id;
+        });
+        winnerOptionId = ranked[0]?.option_id;
+        if (!winnerOptionId) throw error(400, "Cannot pick a winner");
+      }
+
+      const { data: voters, error: votersErr } = await supabase
+        .from("poll_vote")
+        .select("player_id, players!inner(name)")
+        .eq("poll_id", poll_id)
+        .eq("option_id", winnerOptionId)
+        .eq("choice", "yes");
+      if (votersErr) throw votersErr;
+
+      const seen = new Set<string>();
+      playersToPersist = (voters ?? [])
+        .map((row) => ({
+          player_id: row.player_id,
+          team: "P" as const,
+          is_goalkeeper: false,
+        }))
+        .filter((row) => {
+          if (seen.has(row.player_id)) return false;
+          seen.add(row.player_id);
+          return true;
+        });
+    }
+
+    if (playersToPersist.length > 0) {
       const map = new Map<
         string,
         {
@@ -111,7 +171,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
         }
       >();
 
-      for (const p of body.players) {
+      for (const p of playersToPersist) {
         map.set(p.player_id, {
           fixture_id,
           player_id: p.player_id,
