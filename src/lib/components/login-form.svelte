@@ -8,15 +8,15 @@
     let isLogin = $state(true);
 </script>
 
-<Card.Root class="mx-auto w-full max-w-sm">
+<Card.Root class="mx-auto w-full max-w-sm border-white/5 shadow-xl">
     <Card.Header>
         <Card.Title class="text-2xl"
-            >{isLogin ? "Login" : "Registrati"}</Card.Title
+            >{isLogin ? "Accedi" : "Registrati"}</Card.Title
         >
         <Card.Description>
             {isLogin
-                ? "Enter your email below to login to your account"
-                : "Create a new account to join"}
+                ? "Inserisci le tue credenziali per accedere"
+                : "Crea un nuovo account amministratore"}
         </Card.Description>
     </Card.Header>
     <Card.Content>
@@ -31,7 +31,7 @@
                     id="email-{id}"
                     name="email"
                     type="email"
-                    placeholder="m@example.com"
+                    placeholder="mario@esempio.it"
                     required
                 />
             </div>
@@ -47,7 +47,7 @@
                 />
             </div>
             <Button type="submit" class="w-full">
-                {isLogin ? "Login" : "Sign Up"}
+                {isLogin ? "Accedi" : "Registrati"}
             </Button>
             <div class="mt-4 text-center text-sm">
                 {#if isLogin}
@@ -66,7 +66,7 @@
                         class="underline text-primary hover:text-primary/80"
                         onclick={() => (isLogin = true)}
                     >
-                        Login
+                        Accedi
                     </button>
                 {/if}
             </div>
