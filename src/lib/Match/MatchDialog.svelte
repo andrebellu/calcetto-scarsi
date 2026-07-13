@@ -342,7 +342,7 @@
                             </Button>
                         {/snippet}
                     </Popover.Trigger>
-                    <Popover.Content class="w-[320px] p-0 rounded-xl">
+                    <Popover.Content class="w-[min(320px,90vw)] p-0 rounded-xl">
                         <Command.Root>
                             <Command.Input placeholder="Cerca giocatore disponibile…" />
                             <Command.List>
@@ -382,7 +382,7 @@
                             </Button>
                         {/snippet}
                     </Popover.Trigger>
-                    <Popover.Content class="w-[320px] p-0 rounded-xl">
+                    <Popover.Content class="w-[min(320px,90vw)] p-0 rounded-xl">
                         <Command.Root>
                             <Command.Input placeholder="Cerca giocatore disponibile…" />
                             <Command.List>
@@ -418,7 +418,7 @@
                         Squadra Blu
                     </label>
                     <div
-                            class="relative min-h-[220px] sm:min-h-[260px] max-h-[260px] overflow-y-auto pr-2 box-border border border-neutral-200 dark:border-neutral-800 rounded-2xl p-2 mb-2 grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(128px,1fr))] sm:[grid-template-columns:repeat(auto-fill,minmax(140px,1fr))] [grid-auto-rows:92px] bg-white dark:bg-neutral-900 no-scrollbar"
+                            class="relative min-h-[220px] sm:min-h-[260px] max-h-[260px] overflow-y-auto pr-2 box-border border border-neutral-200 dark:border-neutral-800 rounded-2xl p-2 mb-2 grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(108px,1fr))] sm:[grid-template-columns:repeat(auto-fill,minmax(140px,1fr))] [grid-auto-rows:92px] bg-white dark:bg-neutral-900 no-scrollbar"
                             style="touch-action: pan-y;"
                     >
                         {#each bluePlayers as player (player.id)}
@@ -447,7 +447,7 @@
                                         >
                                             <button
                                                     type="button"
-                                                    class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
+                                                    class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
                                                     onclick={() => {
                           if (player.goals > 0) {
                             player.goals--;
@@ -463,7 +463,7 @@
                                             >
                                             <button
                                                     type="button"
-                                                    class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
+                                                    class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
                                                     onclick={() => {
                           player.goals++;
                           bluePlayers = [...bluePlayers];
@@ -484,7 +484,7 @@
                                         >
                                             <button
                                                     type="button"
-                                                    class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
+                                                    class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
                                                     onclick={() => {
                           if (player.ownGoals > 0) {
                             player.ownGoals--;
@@ -500,7 +500,7 @@
                                             >
                                             <button
                                                     type="button"
-                                                    class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
+                                                    class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
                                                     onclick={() => {
                           player.ownGoals++;
                           bluePlayers = [...bluePlayers];
@@ -524,7 +524,7 @@
                         Squadra Rossi
                     </label>
                     <div
-                            class="relative min-h=[220px] sm:min-h-[260px] max-h-[260px] overflow-y-auto pr-2 box-border border border-neutral-200 dark:border-neutral-800 rounded-2xl p-2 mb-2 grid gap-2 grid-cols-[repeat(auto-fill,minmax(128px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] auto-rows-[92px] bg-white dark:bg-neutral-900 no-scrollbar"
+                            class="relative min-h-[220px] sm:min-h-[260px] max-h-[260px] overflow-y-auto pr-2 box-border border border-neutral-200 dark:border-neutral-800 rounded-2xl p-2 mb-2 grid gap-2 grid-cols-[repeat(auto-fill,minmax(108px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] auto-rows-[92px] bg-white dark:bg-neutral-900 no-scrollbar"
                             style="touch-action: pan-y;"
                     >
                         {#each redPlayers as player (player.id)}
@@ -553,7 +553,7 @@
                                         >
                                             <button
                                                     type="button"
-                                                    class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
+                                                    class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
                                                     onclick={() => {
                           if (player.goals > 0) {
                             player.goals--;
@@ -569,7 +569,7 @@
                                             >
                                             <button
                                                     type="button"
-                                                    class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
+                                                    class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
                                                     onclick={() => {
                           player.goals++;
                           redPlayers = [...redPlayers];
@@ -590,7 +590,7 @@
                                         >
                                             <button
                                                     type="button"
-                                                    class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
+                                                    class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg transition-colors touch-manipulation"
                                                     onclick={() => {
                           if (player.ownGoals > 0) {
                             player.ownGoals--;
@@ -606,7 +606,7 @@
                                             >
                                             <button
                                                     type="button"
-                                                    class="p-1 sm:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
+                                                    class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-r-lg transition-colors touch-manipulation"
                                                     onclick={() => {
                           player.ownGoals++;
                           redPlayers = [...redPlayers];

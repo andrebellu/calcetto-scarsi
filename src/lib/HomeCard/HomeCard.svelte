@@ -10,7 +10,7 @@
 
 <a
   href={link}
-  class={`group block rounded-2xl md:rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-${color}-300 hover:border-${color}-400 transition-all p-4 md:p-8 text-center overflow-hidden backdrop-blur-md hover:scale-[1.01] min-h-28 ${
+  class={`group block rounded-2xl md:rounded-3xl bg-surface-200 shadow-xl hover:shadow-2xl border border-${color}-300 hover:border-${color}-400 transition-all p-4 md:p-8 text-center overflow-hidden backdrop-blur-md hover:scale-[1.01] active:scale-[0.99] min-h-28 ${
     highlight ? "glow-border" : ""
   }`}
   aria-current={highlight ? "true" : "false"}

@@ -23,6 +23,7 @@
     import Shuffle from "@lucide/svelte/icons/shuffle";
     import { Toaster, toast } from "svelte-sonner";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
+    import { PUBLIC_VAPID_PUBLIC_KEY } from "$env/static/public";
 
     onMount(() => {
         if (!data.isLogged && !data.poll) {
@@ -280,7 +281,85 @@
             document.cookie = `${identityCookieName}=; path=/; max-age=0`;
     }
 
+    function urlBase64ToUint8Array(base64String: string) {
+        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding)
+            .replace(/-/g, "+")
+            .replace(/_/g, "/");
+        const rawData = atob(base64);
+        return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+    }
+
+    async function subscribeToPush() {
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(
+                    PUBLIC_VAPID_PUBLIC_KEY,
+                ),
+            });
+            await fetch("/api/push/subscribe", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    player_id: chosenPlayerId,
+                    subscription: sub.toJSON(),
+                }),
+            });
+            toast.success("Notifiche attivate!");
+        } catch {
+            toast.error("Impossibile attivare le notifiche");
+        }
+    }
+
+    $effect(() => {
+        if (
+            !chosenPlayerId ||
+            typeof Notification === "undefined" ||
+            Notification.permission !== "default" ||
+            !("serviceWorker" in navigator)
+        )
+            return;
+        navigator.serviceWorker.ready.then(async (reg) => {
+            const existing = await reg.pushManager.getSubscription();
+            if (existing) return;
+            toast.info("Vuoi ricevere notifiche per i sondaggi?", {
+                action: {
+                    label: "Attiva",
+                    onClick: async () => {
+                        const perm = await Notification.requestPermission();
+                        if (perm === "granted") await subscribeToPush();
+                    },
+                },
+                duration: 8000,
+            });
+        });
+    });
+
     let closing = $state(false);
+    let reminding = $state(false);
+
+    async function remindNonVoters(poll_id: number) {
+        reminding = true;
+        try {
+            const res = await fetch(`/api/poll/${poll_id}/remind`, {
+                method: "POST",
+            });
+            if (!res.ok) throw new Error();
+            const { remindedCount } = await res.json();
+            toast.success(
+                remindedCount > 0
+                    ? `Promemoria inviato a ${remindedCount} giocatori`
+                    : "Hanno già votato tutti!",
+            );
+        } catch {
+            toast.error("Errore invio promemoria");
+        } finally {
+            reminding = false;
+        }
+    }
+
     const isLogged = $derived(!!data.isLogged);
     let activeTab = $state<"voto" | "squadre">("voto");
 
@@ -824,6 +903,15 @@
                 </div>
 
                 {#if isLogged && mainPoll.status === "open"}
+                    <div class="flex items-center gap-2 shrink-0">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={reminding}
+                        onclick={() => remindNonVoters(mainPoll.poll_id)}
+                    >
+                        {reminding ? "Invio..." : "Ricorda a chi manca"}
+                    </Button>
                     <AlertDialog.Root>
                         <AlertDialog.Trigger
                             class="{buttonVariants({
@@ -862,6 +950,7 @@
                             </AlertDialog.Footer>
                         </AlertDialog.Content>
                     </AlertDialog.Root>
+                    </div>
                 {/if}
             </div>
 

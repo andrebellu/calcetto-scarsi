@@ -267,7 +267,7 @@
     <div class="flex flex-wrap gap-2 mb-6">
         <!-- Stagione -->
         <select
-            class="h-9 rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer"
+            class="h-11 rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer"
             bind:value={activeSeason}
             onchange={() => applySeasonFilter(activeSeason)}
             aria-label="Filtra per stagione"
@@ -286,7 +286,7 @@
                     <Button
                         {...props}
                         variant="outline"
-                        class="h-9 gap-1.5 font-normal text-sm {playerFilterId
+                        class="h-11 gap-1.5 font-normal text-sm {playerFilterId
                             ? 'border-primary-500 text-primary-600'
                             : ''}"
                         aria-label="Filtra per giocatore"
@@ -294,7 +294,7 @@
                         {labelForPlayer(playerFilterId)}
                         {#if playerFilterId}
                             <button
-                                class="ml-0.5 hover:text-destructive transition-colors"
+                                class="ml-0.5 p-1.5 -m-1.5 hover:text-destructive transition-colors touch-manipulation"
                                 onclick={(e) => {
                                     e.stopPropagation();
                                     resetPlayerFilter();
@@ -340,7 +340,7 @@
                     <Button
                         {...props}
                         variant="outline"
-                        class="h-9 gap-1.5 font-normal text-sm"
+                        class="h-11 gap-1.5 font-normal text-sm"
                         aria-label="Ordina per data"
                     >
                         {sortKey === "date_desc"
@@ -375,7 +375,7 @@
         <!-- Chip filtri attivi -->
         {#if activeFilterCount > 0}
             <button
-                class="h-9 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground border border-dashed transition-colors flex items-center gap-1.5"
+                class="h-11 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground border border-dashed transition-colors flex items-center gap-1.5"
                 onclick={() => {
                     playerFilterId = null;
                     activeSeason = "all";

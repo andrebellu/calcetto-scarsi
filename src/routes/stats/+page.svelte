@@ -322,7 +322,7 @@
         class="flex gap-2 sm:gap-4 mb-4 sm:mb-6 overflow-x-auto no-scrollbar py-1 px-1"
     >
         <button
-            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
+            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white active:bg-primary active:scale-95 active:text-white"
             class:bg-primary={selectedTab === "goals"}
             class:text-white={selectedTab === "goals"}
             class:scale-105={selectedTab === "goals"}
@@ -332,7 +332,7 @@
         </button>
 
         <button
-            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
+            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white active:bg-primary active:scale-95 active:text-white"
             class:bg-primary={selectedTab === "presenze"}
             class:text-white={selectedTab === "presenze"}
             class:scale-105={selectedTab === "presenze"}
@@ -342,7 +342,7 @@
         </button>
 
         <button
-            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
+            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white active:bg-primary active:scale-95 active:text-white"
             class:bg-primary={selectedTab === "winrate"}
             class:text-white={selectedTab === "winrate"}
             class:scale-105={selectedTab === "winrate"}
@@ -352,7 +352,7 @@
         </button>
 
         <button
-            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
+            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white active:bg-primary active:scale-95 active:text-white"
             class:bg-primary={selectedTab === "graphs"}
             class:text-white={selectedTab === "graphs"}
             class:scale-105={selectedTab === "graphs"}
@@ -363,7 +363,7 @@
 
         <button
             type="button"
-            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white"
+            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white active:bg-primary active:scale-95 active:text-white"
             class:bg-primary={showTemporary}
             class:text-white={showTemporary}
             onclick={() => (showTemporary = !showTemporary)}
@@ -444,7 +444,7 @@
                                                         {player.name}
                                                     </div>
                                                     <div
-                                                        class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted"
+                                                        class="mt-1 h-1.5 w-full max-w-32 sm:max-w-44 rounded bg-muted"
                                                     >
                                                         <div
                                                             class="h-1.5 rounded bg-primary transition-all"
@@ -532,7 +532,7 @@
                                                         {player.name}
                                                     </div>
                                                     <div
-                                                        class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted"
+                                                        class="mt-1 h-1.5 w-full max-w-32 sm:max-w-44 rounded bg-muted"
                                                     >
                                                         <div
                                                             class="h-1.5 rounded bg-primary/70 transition-all"
@@ -620,7 +620,7 @@
                                                         {player.name}
                                                     </div>
                                                     <div
-                                                        class="mt-1 h-1.5 w-32 sm:w-44 rounded bg-muted"
+                                                        class="mt-1 h-1.5 w-full max-w-32 sm:max-w-44 rounded bg-muted"
                                                     >
                                                         <div
                                                             class="h-1.5 rounded bg-primary/60 transition-all"

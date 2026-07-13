@@ -8,7 +8,11 @@ export default defineConfig({
     sveltekit(),
     tailwindcss(),
     SvelteKitPWA({
-      strategies: "generateSW",
+      strategies: "injectManifest",
+      injectManifest: {
+        swSrc: "src/service-worker.ts",
+        swDest: "service-worker.js",
+      },
 
       devOptions: {
         enabled: false,
@@ -62,15 +66,6 @@ export default defineConfig({
         "./icons/ios/*.png",
         "./screenshots/*.png",
       ],
-
-      workbox: {
-        globPatterns: [
-          "_app/**/*.{js,css,html,png,svg,ico}",
-          "_app/immutable/**/*.{js,css,html,png,svg,ico}",
-        ],
-        navigateFallback: "/",
-        navigateFallbackAllowlist: [/^\/$/],
-      },
     }),
   ],
 });

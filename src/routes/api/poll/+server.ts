@@ -1,6 +1,7 @@
 // src/routes/api/poll/+server.ts
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { sendPushToPlayers } from '$lib/server/push';
 
 export const POST: RequestHandler = async ({ locals, request }) => {
   const supabase = locals.supabase;
@@ -36,6 +37,21 @@ export const POST: RequestHandler = async ({ locals, request }) => {
       console.error(optErr);
       throw error(500, optErr.message);
     }
+  }
+
+  try {
+    const { data: players } = await supabase
+      .from('players')
+      .select('player_id')
+      .eq('is_temporary', false);
+    const playerIds = (players ?? []).map((p) => p.player_id).filter(Boolean);
+    await sendPushToPlayers(playerIds, {
+      title: 'Nuovo sondaggio!',
+      body: title,
+      url: '/poll',
+    });
+  } catch (pushErr) {
+    console.error('push notify-all error', pushErr);
   }
 
   return json({ poll_id: newPoll.poll_id });

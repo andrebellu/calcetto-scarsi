@@ -14,16 +14,16 @@
   let { session, supabase } = $derived(data);
 
   onMount(() => {
-    const { data } = supabase.auth.onAuthStateChange((_, newSession) => {
-      if (newSession?.expires_at !== session?.expires_at) {
-        invalidate("supabase:auth");
-      }
-
-      if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
         .then(reg => console.log('SW registrato', reg))
         .catch(err => console.error('Errore registrazione SW', err));
     }
+
+    const { data } = supabase.auth.onAuthStateChange((_, newSession) => {
+      if (newSession?.expires_at !== session?.expires_at) {
+        invalidate("supabase:auth");
+      }
     });
 
     return () => data.subscription.unsubscribe();

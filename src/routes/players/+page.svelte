@@ -127,14 +127,14 @@
         <input
             type="search"
             placeholder="Cerca giocatore…"
-            class="h-9 flex-1 min-w-40 rounded-lg border px-3 text-sm bg-background outline-none focus:ring-2 focus:ring-primary"
+            class="h-11 flex-1 min-w-40 rounded-lg border px-3 text-sm bg-background outline-none focus:ring-2 focus:ring-primary"
             bind:value={query}
             aria-label="Cerca giocatore"
         />
 
         <button
             type="button"
-            class="h-9 px-3 rounded-lg text-sm font-medium border transition-colors
+            class="h-11 px-3 rounded-lg text-sm font-medium border transition-colors
         {showFixed
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'text-muted-foreground hover:text-foreground'}"
@@ -148,7 +148,7 @@
 
         <button
             type="button"
-            class="h-9 px-3 rounded-lg text-sm font-medium border transition-colors
+            class="h-11 px-3 rounded-lg text-sm font-medium border transition-colors
         {showTemporary
                 ? 'bg-red-500 text-white border-red-500'
                 : 'text-muted-foreground hover:text-foreground'}"
