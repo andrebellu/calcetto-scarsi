@@ -1,12 +1,11 @@
 <script lang="ts">
     import type { PageData } from "./$types";
-    import ChevronLeft from "@lucide/svelte/icons/chevron-left";
     import Shuffle from "@lucide/svelte/icons/shuffle";
     import Save from "@lucide/svelte/icons/save";
     import Trash2 from "@lucide/svelte/icons/trash-2";
     import { shuffle } from "$lib/utils/random";
     import { toast } from "svelte-sonner";
-    import { Toaster } from "svelte-sonner";
+    import Navbar from "$lib/Navbar/Navbar.svelte";
     export let data: PageData;
 
     const partita = data.prossimaPartita;
@@ -127,47 +126,34 @@
     }
 </script>
 
-<Toaster position="top-center" richColors />
+<div class="mx-auto max-w-4xl px-4 sm:px-6 pt-6 sm:pt-10">
+    <Navbar />
+</div>
 
-<!-- Top nav -->
-<div
-    class="sticky top-0 z-20 backdrop-blur-md bg-background/80 border-b border-border/50"
->
-    <div
-        class="mx-auto max-w-4xl px-4 sm:px-6 h-14 flex items-center justify-between"
-    >
-        <a
-            href="/"
-            class="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-            <ChevronLeft class="size-4" />
-            Home
-        </a>
+<main class="mx-auto w-full max-w-4xl px-4 sm:px-6 pt-0 pb-6 sm:pb-10 space-y-6">
+    <!-- Header -->
+    <div class="flex items-start justify-between gap-4">
+        <div class="space-y-1">
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+                Convocazioni
+            </h1>
+            {#if data.dataDecisa && partita}
+                <p class="text-sm text-muted-foreground">
+                    {formatDate(partita.data)} · {partita.luogo}{#if partita.ora}
+                        · ore {partita.ora}{/if}
+                </p>
+            {:else}
+                <p class="text-sm text-muted-foreground">
+                    Nessuna convocazione confermata.
+                </p>
+            {/if}
+        </div>
         {#if data.isAuthenticated}
             <a
                 href="/poll"
-                class="text-sm font-medium text-primary hover:underline"
+                class="shrink-0 text-sm font-medium text-primary hover:underline"
                 >Crea sondaggio →</a
             >
-        {/if}
-    </div>
-</div>
-
-<main class="mx-auto w-full max-w-4xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
-    <!-- Header -->
-    <div class="space-y-1">
-        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
-            Convocazioni
-        </h1>
-        {#if data.dataDecisa && partita}
-            <p class="text-sm text-muted-foreground">
-                {formatDate(partita.data)} · {partita.luogo}{#if partita.ora}
-                    · ore {partita.ora}{/if}
-            </p>
-        {:else}
-            <p class="text-sm text-muted-foreground">
-                Nessuna convocazione confermata.
-            </p>
         {/if}
     </div>
 
@@ -258,12 +244,12 @@
                                     >
                                     <div class="flex gap-1 flex-shrink-0">
                                         <button
-                                            class="size-5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                                            class="size-5 rounded text-[10px] font-bold bg-team-blue/15 text-team-blue hover:bg-team-blue/25 transition-colors"
                                             onclick={() => moveTo(player, "A")}
                                             >A</button
                                         >
                                         <button
-                                            class="size-5 rounded text-[10px] font-bold bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                                            class="size-5 rounded text-[10px] font-bold bg-team-red/15 text-team-red hover:bg-team-red/25 transition-colors"
                                             onclick={() => moveTo(player, "B")}
                                             >B</button
                                         >
@@ -287,7 +273,7 @@
                         ondragover={(e) => e.preventDefault()}
                     >
                         <p
-                            class="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider px-1"
+                            class="text-xs font-semibold text-team-blue uppercase tracking-wider px-1"
                         >
                             Squadra Finocchi <span
                                 class="font-normal text-muted-foreground"
@@ -300,7 +286,7 @@
                                     draggable="true"
                                     ondragstart={(e) =>
                                         handleDragStart(e, player)}
-                                    class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 cursor-grab active:cursor-grabbing"
+                                    class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-team-blue/10 border border-team-blue/25 cursor-grab active:cursor-grabbing"
                                 >
                                     <span class="text-sm font-medium truncate"
                                         >{player.name}</span
@@ -310,7 +296,7 @@
                                     >
                                         {#if player.is_goalkeeper}
                                             <span
-                                                class="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 font-medium"
+                                                class="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/15 text-secondary-500 font-medium"
                                                 >GK</span
                                             >
                                         {/if}
@@ -326,7 +312,7 @@
                             {/each}
                             {#if orderedA.length === 0}
                                 <li
-                                    class="flex items-center justify-center h-28 text-xs text-blue-400 italic"
+                                    class="flex items-center justify-center h-28 text-xs text-team-blue/70 italic"
                                 >
                                     Trascina qui
                                 </li>
@@ -341,7 +327,7 @@
                         ondragover={(e) => e.preventDefault()}
                     >
                         <p
-                            class="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider px-1"
+                            class="text-xs font-semibold text-team-red uppercase tracking-wider px-1"
                         >
                             Squadra Pomodori <span
                                 class="font-normal text-muted-foreground"
@@ -354,7 +340,7 @@
                                     draggable="true"
                                     ondragstart={(e) =>
                                         handleDragStart(e, player)}
-                                    class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-red-50/60 dark:bg-red-950/20 border border-red-100 dark:border-red-900/40 cursor-grab active:cursor-grabbing"
+                                    class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-team-red/10 border border-team-red/25 cursor-grab active:cursor-grabbing"
                                 >
                                     <span class="text-sm font-medium truncate"
                                         >{player.name}</span
@@ -364,7 +350,7 @@
                                     >
                                         {#if player.is_goalkeeper}
                                             <span
-                                                class="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 font-medium"
+                                                class="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/15 text-secondary-500 font-medium"
                                                 >GK</span
                                             >
                                         {/if}
@@ -380,7 +366,7 @@
                             {/each}
                             {#if orderedB.length === 0}
                                 <li
-                                    class="flex items-center justify-center h-28 text-xs text-red-400 italic"
+                                    class="flex items-center justify-center h-28 text-xs text-team-red/70 italic"
                                 >
                                     Trascina qui
                                 </li>
@@ -394,20 +380,20 @@
         <!-- ── VISTA PUBBLICA: squadre read-only ── -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div
-                class="rounded-2xl border border-blue-200 dark:border-blue-900 overflow-hidden"
+                class="rounded-2xl border border-team-blue/25 overflow-hidden"
             >
                 <div
-                    class="px-4 py-3 bg-blue-50/60 dark:bg-blue-950/20 border-b border-blue-200 dark:border-blue-900 flex items-center justify-between"
+                    class="px-4 py-3 bg-team-blue/10 border-b border-team-blue/25 flex items-center justify-between"
                 >
-                    <h2 class="font-semibold text-blue-700 dark:text-blue-400">
+                    <h2 class="font-semibold text-team-blue">
                         Squadra Pomodori
                     </h2>
                     <span
-                        class="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full"
+                        class="text-xs font-medium text-team-blue bg-team-blue/15 px-2 py-0.5 rounded-full"
                         >{orderedA.length}</span
                     >
                 </div>
-                <ul class="divide-y divide-blue-100 dark:divide-blue-900/30">
+                <ul class="divide-y divide-team-blue/15">
                     {#each orderedA as p (p.player_id)}
                         <li
                             class="flex items-center justify-between px-4 py-2.5"
@@ -415,7 +401,7 @@
                             <span class="text-sm font-medium">{p.name}</span>
                             {#if p.is_goalkeeper}
                                 <span
-                                    class="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 font-medium"
+                                    class="text-[11px] px-2 py-0.5 rounded-full bg-secondary/15 text-secondary-500 font-medium"
                                     >GK</span
                                 >
                             {/if}
@@ -432,20 +418,20 @@
             </div>
 
             <div
-                class="rounded-2xl border border-red-200 dark:border-red-900 overflow-hidden"
+                class="rounded-2xl border border-team-red/25 overflow-hidden"
             >
                 <div
-                    class="px-4 py-3 bg-red-50/60 dark:bg-red-950/20 border-b border-red-200 dark:border-red-900 flex items-center justify-between"
+                    class="px-4 py-3 bg-team-red/10 border-b border-team-red/25 flex items-center justify-between"
                 >
-                    <h2 class="font-semibold text-red-700 dark:text-red-400">
+                    <h2 class="font-semibold text-team-red">
                         Squadra Finocchi
                     </h2>
                     <span
-                        class="text-xs font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/40 px-2 py-0.5 rounded-full"
+                        class="text-xs font-medium text-team-red bg-team-red/15 px-2 py-0.5 rounded-full"
                         >{orderedB.length}</span
                     >
                 </div>
-                <ul class="divide-y divide-red-100 dark:divide-red-900/30">
+                <ul class="divide-y divide-team-red/15">
                     {#each orderedB as p (p.player_id)}
                         <li
                             class="flex items-center justify-between px-4 py-2.5"
@@ -453,7 +439,7 @@
                             <span class="text-sm font-medium">{p.name}</span>
                             {#if p.is_goalkeeper}
                                 <span
-                                    class="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 font-medium"
+                                    class="text-[11px] px-2 py-0.5 rounded-full bg-secondary/15 text-secondary-500 font-medium"
                                     >GK</span
                                 >
                             {/if}
@@ -491,7 +477,7 @@
                             <span class="text-sm font-medium">{p.name}</span>
                             {#if p.is_goalkeeper}
                                 <span
-                                    class="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 font-medium"
+                                    class="text-[11px] px-2 py-0.5 rounded-full bg-secondary/15 text-secondary-500 font-medium"
                                     >GK</span
                                 >
                             {/if}
