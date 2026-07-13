@@ -54,7 +54,6 @@ export default defineConfig({
             src: "screenshots/mobile.png",
             sizes: "404x870",
             type: "image/png",
-            form_factor: undefined,
           },
         ],
       },
