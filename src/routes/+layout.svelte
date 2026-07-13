@@ -41,17 +41,23 @@
 
 
 {#if $page.url.pathname == "/"}
-  <div class="fixed inset-0 -z-10 w-screen h-screen">
+  <div class="fixed inset-0 -z-10 w-screen h-screen bg-background">
     <img
       src={asset("/imgs/fieldAI.webp")}
       alt="Campo da calcetto illuminato di sera"
-      class="top-0 left-0 w-screen h-screen opacity-70 aspect-square object-cover"
+      class="top-0 left-0 w-screen h-screen opacity-55 aspect-square object-cover"
       width="1920"
       height="1080"
       decoding="async"
       fetchpriority="high"
       draggable="false"
     />
+    <div
+      class="absolute inset-0 bg-gradient-to-b from-background/80 via-background/45 to-background"
+    ></div>
+    <div
+      class="absolute inset-0 bg-gradient-to-t from-primary-950/25 via-transparent to-transparent"
+    ></div>
   </div>
 {/if}
 

@@ -30,11 +30,11 @@
 </script>
 
 <div
-    class="rounded-2xl border bg-card overflow-hidden transition-shadow hover:shadow-md"
+    class="rounded-2xl border border-white/5 bg-card overflow-hidden shadow-md transition-all hover:shadow-lg hover:border-white/10"
 >
     <!-- Top bar: meta info + punteggio -->
     <div
-        class="flex items-center justify-between gap-4 px-4 py-3 border-b bg-muted/20"
+        class="flex items-center justify-between gap-4 px-4 py-3 border-b border-white/5 bg-white/[0.02]"
     >
         <!-- Meta -->
         <div class="flex items-center gap-2 min-w-0 flex-1">
@@ -45,7 +45,7 @@
                 </p>
                 {#if match.season}
                     <span
-                        class="shrink-0 text-[0.5rem] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary-700 dark:text-primary-300"
+                        class="shrink-0 text-[0.5rem] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary-300"
                     >
                         {match.season}
                     </span>
@@ -57,14 +57,14 @@
         <div class="flex items-center gap-2 shrink-0">
             <div class="flex flex-col items-center">
                 <span
-                    class="text-[10px] font-semibold text-blue-500 uppercase tracking-wider mb-1"
+                    class="text-[10px] font-semibold text-team-blue uppercase tracking-wider mb-1"
                     >Blu</span
                 >
                 <span
-                    class="inline-flex items-center justify-center w-10 h-9 rounded-lg font-bold text-lg
+                    class="inline-flex items-center justify-center w-10 h-9 rounded-lg font-extrabold text-lg tabular-nums
           {blueWins
-                        ? 'bg-blue-500 text-white shadow-sm'
-                        : 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'}"
+                        ? 'bg-team-blue text-team-blue-foreground shadow-sm'
+                        : 'bg-team-blue/15 text-team-blue'}"
                 >
                     {blueScore}
                 </span>
@@ -74,14 +74,14 @@
             >
             <div class="flex flex-col items-center">
                 <span
-                    class="text-[10px] font-semibold text-red-500 uppercase tracking-wider mb-1"
+                    class="text-[10px] font-semibold text-team-red uppercase tracking-wider mb-1"
                     >Rossi</span
                 >
                 <span
-                    class="inline-flex items-center justify-center w-10 h-9 rounded-lg font-bold text-lg
+                    class="inline-flex items-center justify-center w-10 h-9 rounded-lg font-extrabold text-lg tabular-nums
           {redWins
-                        ? 'bg-red-500 text-white shadow-sm'
-                        : 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300'}"
+                        ? 'bg-team-red text-team-red-foreground shadow-sm'
+                        : 'bg-team-red/15 text-team-red'}"
                 >
                     {redScore}
                 </span>
@@ -90,7 +90,7 @@
     </div>
 
     <!-- Giocatori -->
-    <div class="grid grid-cols-2 divide-x">
+    <div class="grid grid-cols-2 divide-x divide-white/5">
         <!-- Blu -->
         <div class="p-3 space-y-1">
             {#each blue as player}
@@ -103,13 +103,13 @@
                     <div class="flex items-center gap-1 shrink-0">
                         {#if Number(player.goals) > 0}
                             <span
-                                class="text-xs font-semibold text-blue-600 dark:text-blue-400"
+                                class="text-xs font-semibold text-team-blue"
                             >
                                 ⚽ {player.goals}
                             </span>
                         {/if}
                         {#if Number(player.autogol) > 0}
-                            <span class="text-xs font-semibold text-red-500">
+                            <span class="text-xs font-semibold text-team-red">
                                 ✗ {player.autogol}
                             </span>
                         {/if}
@@ -135,13 +135,13 @@
                     <div class="flex items-center gap-1 shrink-0">
                         {#if Number(player.goals) > 0}
                             <span
-                                class="text-xs font-semibold text-red-600 dark:text-red-400"
+                                class="text-xs font-semibold text-team-red"
                             >
                                 ⚽ {player.goals}
                             </span>
                         {/if}
                         {#if Number(player.autogol) > 0}
-                            <span class="text-xs font-semibold text-blue-500">
+                            <span class="text-xs font-semibold text-team-blue">
                                 ✗ {player.autogol}
                             </span>
                         {/if}
@@ -159,7 +159,7 @@
     <!-- Footer: pareggio o MVP/SVP -->
     {#if isDraw || match.mvpPlayers?.length || match.svpPlayers?.length}
         <div
-            class="px-4 py-2 border-t bg-muted/10 flex items-center gap-3 flex-wrap text-xs text-muted-foreground"
+            class="px-4 py-2 border-t border-white/5 bg-white/[0.015] flex items-center gap-3 flex-wrap text-xs text-muted-foreground"
         >
             {#if isDraw}
                 <span class="font-medium">Pareggio</span>

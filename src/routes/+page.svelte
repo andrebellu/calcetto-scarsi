@@ -41,49 +41,49 @@
 
         <!-- Title -->
         <h1
-            class="text-5xl md:text-7xl font-extrabold tracking-tight leading-none mb-6"
+            class="text-4xl md:text-6xl font-extrabold tracking-tight leading-none mb-5"
         >
-            <span class="font-light text-surface-200">Calcetto per</span><br />
+            <span class="font-light text-surface-200">Calcetto per</span>
             <span class="text-primary-500">scarsi</span>
         </h1>
 
         <!-- Stats strip -->
-        <div class="flex flex-wrap gap-3 mb-8">
+        <div class="grid grid-cols-3 gap-2.5 mb-6">
             <div
-                class="bg-surface-800/50 border border-surface-700/50 rounded-lg px-4 py-2.5 flex flex-col"
+                class="bg-surface-800/60 border border-surface-700/60 rounded-xl px-3 py-3 flex flex-col items-center text-center"
             >
-                <span class="text-xl font-medium text-surface-100 leading-none">
+                <span class="text-xl font-bold text-surface-100 leading-none">
                     {data.playersCount}
                     {#if data.tempPlayersCount > 0}
-                        <span class="text-sm text-red-400 font-medium"
+                        <span class="block text-[10px] text-red-400 font-medium mt-1"
                             >+{data.tempPlayersCount} temp</span
                         >
                     {/if}
                 </span>
                 <span
-                    class="text-[11px] uppercase tracking-widest text-surface-400 mt-1"
+                    class="text-[10px] uppercase tracking-widest text-surface-400 mt-1.5"
                     >Giocatori</span
                 >
             </div>
             <div
-                class="bg-surface-800/50 border border-surface-700/50 rounded-lg px-4 py-2.5 flex flex-col"
+                class="bg-surface-800/60 border border-surface-700/60 rounded-xl px-3 py-3 flex flex-col items-center text-center"
             >
-                <span class="text-xl font-medium text-surface-100 leading-none"
+                <span class="text-xl font-bold text-surface-100 leading-none"
                     >{data.totalMatches}</span
                 >
                 <span
-                    class="text-[11px] uppercase tracking-widest text-surface-400 mt-1"
+                    class="text-[10px] uppercase tracking-widest text-surface-400 mt-1.5"
                     >Partite</span
                 >
             </div>
             <div
-                class="bg-surface-800/50 border border-surface-700/50 rounded-lg px-4 py-2.5 flex flex-col"
+                class="bg-surface-800/60 border border-surface-700/60 rounded-xl px-3 py-3 flex flex-col items-center text-center"
             >
-                <span class="text-xl font-medium text-surface-100 leading-none"
+                <span class="text-xl font-bold text-surface-100 leading-none"
                     >{data.totalGoals}</span
                 >
                 <span
-                    class="text-[11px] uppercase tracking-widest text-surface-400 mt-1"
+                    class="text-[10px] uppercase tracking-widest text-surface-400 mt-1.5"
                     >Gol totali</span
                 >
             </div>
@@ -163,12 +163,10 @@
             </div>
         {/if}
 
-        <!-- Nav cards grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+        <!-- Nav cards bento grid -->
+        <div class="grid grid-cols-2 gap-3 w-full">
             {#each homeCards as card}
-                <HomeCard {...card}>
-                    Vai a {card.title.toLowerCase()} →
-                </HomeCard>
+                <HomeCard {...card} />
             {/each}
         </div>
     </div>

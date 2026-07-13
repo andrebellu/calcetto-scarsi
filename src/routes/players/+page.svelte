@@ -162,9 +162,9 @@
     </div>
 
     {#await data.streamed.players}
-        <div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid gap-2.5 sm:gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {#each [1, 2, 3, 4, 5, 6] as _}
-                <Skeleton class="h-40 w-full rounded-2xl" />
+                <Skeleton class="h-24 w-full rounded-2xl" />
             {/each}
         </div>
     {:then _}
@@ -183,7 +183,7 @@
                     </h2>
                 </div>
                 <div
-                    class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                    class="grid gap-2.5 sm:gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
                 >
                     {#each fixedPlayers as player (player.name)}
                         <div animate:flip>
@@ -217,7 +217,7 @@
                     </h2>
                 </div>
                 <div
-                    class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                    class="grid gap-2.5 sm:gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
                 >
                     {#each tempPlayers as player (player.name)}
                         <div animate:flip>

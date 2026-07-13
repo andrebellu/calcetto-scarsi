@@ -3,7 +3,7 @@
 </script>
 
 <div
-  class="rounded-3xl bg-red-500/60 p-2 backdrop-blur-md border border-[#800020]/60 shadow-lg"
+  class="rounded-3xl bg-team-red/60 p-2 backdrop-blur-md border border-team-red/40 shadow-lg"
 >
   {content}
 </div>

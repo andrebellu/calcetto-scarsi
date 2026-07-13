@@ -243,7 +243,7 @@
     <Navbar />
 
     <!-- Header -->
-    <div class="mb-6 sm:mb-8">
+    <div class="mb-5 sm:mb-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
@@ -264,7 +264,7 @@
     </div>
 
     <!-- Filtri compatti -->
-    <div class="flex flex-wrap gap-2 mb-6">
+    <div class="flex flex-wrap gap-2 mb-5">
         <!-- Stagione -->
         <select
             class="h-11 rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer"

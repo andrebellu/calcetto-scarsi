@@ -319,43 +319,43 @@
     </div>
 
     <div
-        class="flex gap-2 sm:gap-4 mb-4 sm:mb-6 overflow-x-auto no-scrollbar py-1 px-1"
+        class="flex gap-2 mb-4 sm:mb-6 overflow-x-auto no-scrollbar py-1 px-1"
     >
         <button
-            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white active:bg-primary active:scale-95 active:text-white"
-            class:bg-primary={selectedTab === "goals"}
-            class:text-white={selectedTab === "goals"}
-            class:scale-105={selectedTab === "goals"}
+            class="shrink-0 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-all
+                {selectedTab === 'goals'
+                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-white/5'}"
             onclick={() => (selectedTab = "goals")}
         >
             Classifica Gol
         </button>
 
         <button
-            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white active:bg-primary active:scale-95 active:text-white"
-            class:bg-primary={selectedTab === "presenze"}
-            class:text-white={selectedTab === "presenze"}
-            class:scale-105={selectedTab === "presenze"}
+            class="shrink-0 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-all
+                {selectedTab === 'presenze'
+                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-white/5'}"
             onclick={() => (selectedTab = "presenze")}
         >
             Classifica Media Gol
         </button>
 
         <button
-            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white active:bg-primary active:scale-95 active:text-white"
-            class:bg-primary={selectedTab === "winrate"}
-            class:text-white={selectedTab === "winrate"}
-            class:scale-105={selectedTab === "winrate"}
+            class="shrink-0 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-all
+                {selectedTab === 'winrate'
+                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-white/5'}"
             onclick={() => (selectedTab = "winrate")}
         >
             Classifica Winrate
         </button>
 
         <button
-            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white active:bg-primary active:scale-95 active:text-white"
-            class:bg-primary={selectedTab === "graphs"}
-            class:text-white={selectedTab === "graphs"}
-            class:scale-105={selectedTab === "graphs"}
+            class="shrink-0 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-all
+                {selectedTab === 'graphs'
+                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-white/5'}"
             onclick={() => (selectedTab = "graphs")}
         >
             Grafici Giocatore
@@ -363,9 +363,10 @@
 
         <button
             type="button"
-            class="px-3 sm:px-4 py-2 rounded-2xl font-semibold border transition-all duration-300 hover:bg-primary hover:scale-105 hover:text-white active:bg-primary active:scale-95 active:text-white"
-            class:bg-primary={showTemporary}
-            class:text-white={showTemporary}
+            class="shrink-0 ml-auto px-3.5 py-2 rounded-xl text-sm font-medium border transition-all
+                {showTemporary
+                ? 'bg-secondary text-secondary-foreground border-secondary shadow-sm'
+                : 'text-muted-foreground border-dashed border-white/15 hover:text-foreground hover:bg-white/5'}"
             onclick={() => (showTemporary = !showTemporary)}
             aria-pressed={showTemporary}
             title={showTemporary ? "Nascondi temporanei" : "Mostra temporanei"}

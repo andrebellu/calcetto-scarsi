@@ -18,11 +18,11 @@
     import Clock from "@lucide/svelte/icons/clock";
     import Users from "@lucide/svelte/icons/users";
     import Check from "@lucide/svelte/icons/check";
-    import ChevronLeft from "@lucide/svelte/icons/chevron-left";
     import ChevronDown from "@lucide/svelte/icons/chevron-down";
     import Shuffle from "@lucide/svelte/icons/shuffle";
     import { Toaster, toast } from "svelte-sonner";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
+    import Navbar from "$lib/Navbar/Navbar.svelte";
     import { PUBLIC_VAPID_PUBLIC_KEY } from "$env/static/public";
 
     onMount(() => {
@@ -659,19 +659,13 @@
 
 <Toaster position="top-center" richColors />
 
-<!-- Top nav -->
-<div
-    class="sticky top-0 z-20 backdrop-blur-md bg-background/80 border-b border-border/50"
->
-    <div
-        class="mx-auto max-w-4xl px-4 sm:px-6 h-14 flex items-center justify-between gap-4"
-    >
-        <a
-            href="/"
-            class="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-            <ChevronLeft class="size-4" /> Home
-        </a>
+<div class="mx-auto max-w-4xl px-4 sm:px-6 pt-6 sm:pt-10">
+    <Navbar />
+</div>
+
+<!-- Azioni sondaggio -->
+<div class="mx-auto max-w-4xl px-4 sm:px-6">
+    <div class="flex items-center justify-end gap-4 -mt-2 mb-2">
         {#if data.isLogged}
             <Dialog.Root>
                 <Dialog.Trigger
@@ -868,7 +862,7 @@
     </div>
 </div>
 
-<main class="mx-auto max-w-4xl px-4 sm:px-6 py-6 sm:py-10 space-y-8">
+<main class="mx-auto max-w-4xl px-4 sm:px-6 pt-2 pb-6 sm:pb-10 space-y-8">
     {#if mainPoll}
         <section class="space-y-6">
             <!-- Header sondaggio -->
