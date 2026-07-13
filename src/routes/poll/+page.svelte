@@ -192,14 +192,14 @@
                 return;
             }
             if (checked) {
-                votedSet.add(option_id);
+                myVotes = [...myVotes, { option_id, choice: "yes" }];
                 counts = {
                     ...counts,
                     [option_id]: (counts[option_id] ?? 0) + 1,
                 };
                 toast.success("Voto aggiunto!");
             } else {
-                votedSet.delete(option_id);
+                myVotes = myVotes.filter((v) => v.option_id !== option_id);
                 counts = {
                     ...counts,
                     [option_id]: Math.max(0, (counts[option_id] ?? 1) - 1),
@@ -907,6 +907,7 @@
                     <Button
                         variant="outline"
                         size="sm"
+                        class=""
                         disabled={reminding}
                         onclick={() => remindNonVoters(mainPoll.poll_id)}
                     >
