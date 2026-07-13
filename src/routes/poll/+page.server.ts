@@ -52,12 +52,15 @@ export const load: PageServerLoad = async ({ locals, depends, cookies }) => {
       .select("player_id, name, is_temporary")
       .eq("is_temporary", false)
       .order("name", { ascending: true }),
-    // usedRows
+    // usedRows - solo i voti di ALTRI browser/dispositivi bloccano un nome:
+    // questo browser (stesso voter_token) deve poter tornare su un nome che
+    // ha già usato in precedenza, anche dopo essere passato a un altro.
     supabase
       .from("poll_vote")
       .select("player_id")
       .eq("poll_id", poll.poll_id)
-      .not("player_id", "is", null),
+      .not("player_id", "is", null)
+      .neq("voter_token", token),
     // options
     supabase
       .from("poll_option")
