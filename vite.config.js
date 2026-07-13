@@ -13,7 +13,6 @@ export default defineConfig({
 
       workbox: {
         importScripts: ["/sw-push.js"],
-        navigateFallback: "/",
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff,woff2}"],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
@@ -38,8 +37,8 @@ export default defineConfig({
         start_url: "/",
         display: "standalone",
         orientation: "portrait",
-        background_color: "#ffffff",
-        theme_color: "#007bff",
+        background_color: "#0e1613",
+        theme_color: "#0e1613",
         scope: "/",
         icons: [
           {
