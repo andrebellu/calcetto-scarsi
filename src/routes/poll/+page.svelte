@@ -20,7 +20,7 @@
     import Check from "@lucide/svelte/icons/check";
     import ChevronDown from "@lucide/svelte/icons/chevron-down";
     import Shuffle from "@lucide/svelte/icons/shuffle";
-    import { Toaster, toast } from "svelte-sonner";
+    import { toast } from "svelte-sonner";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
     import Navbar from "$lib/Navbar/Navbar.svelte";
     import { PUBLIC_VAPID_PUBLIC_KEY } from "$env/static/public";
@@ -657,8 +657,6 @@
                 : "🕓";
 </script>
 
-<Toaster position="top-center" richColors />
-
 <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-6 sm:pt-10">
     <Navbar />
 </div>
@@ -898,53 +896,54 @@
 
                 {#if isLogged && mainPoll.status === "open"}
                     <div class="flex items-center gap-2 shrink-0">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class=""
-                        disabled={reminding}
-                        onclick={() => remindNonVoters(mainPoll.poll_id)}
-                    >
-                        {reminding ? "Invio..." : "Ricorda a chi manca"}
-                    </Button>
-                    <AlertDialog.Root>
-                        <AlertDialog.Trigger
-                            class="{buttonVariants({
-                                variant: 'outline',
-                                size: 'sm',
-                            })} text-destructive border-destructive/30 hover:bg-destructive/5 shrink-0"
-                            disabled={closing}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class=""
+                            disabled={reminding}
+                            onclick={() => remindNonVoters(mainPoll.poll_id)}
                         >
-                            {closing ? "Chiusura..." : "Chiudi sondaggio"}
-                        </AlertDialog.Trigger>
-                        <AlertDialog.Content
-                            class="max-w-md"
-                            portalProps={undefined}
-                        >
-                            <AlertDialog.Header class="">
-                                <AlertDialog.Title class=""
-                                    >Chiudere definitivamente il sondaggio?</AlertDialog.Title
-                                >
-                                <AlertDialog.Description class=""
-                                    >Operazione irreversibile.</AlertDialog.Description
-                                >
-                            </AlertDialog.Header>
-                            <AlertDialog.Footer class="">
-                                <AlertDialog.Cancel
-                                    class={buttonVariants({
-                                        variant: "outline",
-                                    })}>Annulla</AlertDialog.Cancel
-                                >
-                                <AlertDialog.Action
-                                    class={buttonVariants({
-                                        variant: "destructive",
-                                    })}
-                                    onclick={() => closePoll(mainPoll.poll_id)}
-                                    >Conferma</AlertDialog.Action
-                                >
-                            </AlertDialog.Footer>
-                        </AlertDialog.Content>
-                    </AlertDialog.Root>
+                            {reminding ? "Invio..." : "Ricorda a chi manca"}
+                        </Button>
+                        <AlertDialog.Root>
+                            <AlertDialog.Trigger
+                                class="{buttonVariants({
+                                    variant: 'outline',
+                                    size: 'sm',
+                                })} text-destructive border-destructive/30 hover:bg-destructive/5 shrink-0"
+                                disabled={closing}
+                            >
+                                {closing ? "Chiusura..." : "Chiudi sondaggio"}
+                            </AlertDialog.Trigger>
+                            <AlertDialog.Content
+                                class="max-w-md"
+                                portalProps={undefined}
+                            >
+                                <AlertDialog.Header class="">
+                                    <AlertDialog.Title class=""
+                                        >Chiudere definitivamente il sondaggio?</AlertDialog.Title
+                                    >
+                                    <AlertDialog.Description class=""
+                                        >Operazione irreversibile.</AlertDialog.Description
+                                    >
+                                </AlertDialog.Header>
+                                <AlertDialog.Footer class="">
+                                    <AlertDialog.Cancel
+                                        class={buttonVariants({
+                                            variant: "outline",
+                                        })}>Annulla</AlertDialog.Cancel
+                                    >
+                                    <AlertDialog.Action
+                                        class={buttonVariants({
+                                            variant: "destructive",
+                                        })}
+                                        onclick={() =>
+                                            closePoll(mainPoll.poll_id)}
+                                        >Conferma</AlertDialog.Action
+                                    >
+                                </AlertDialog.Footer>
+                            </AlertDialog.Content>
+                        </AlertDialog.Root>
                     </div>
                 {/if}
             </div>
