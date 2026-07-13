@@ -8,9 +8,22 @@ export default defineConfig({
     sveltekit(),
     tailwindcss(),
     SvelteKitPWA({
-      strategies: "injectManifest",
-      srcDir: "src",
-      filename: "service-worker.ts",
+      strategies: "generateSW",
+      registerType: "autoUpdate",
+
+      workbox: {
+        importScripts: ["/sw-push.js"],
+        navigateFallback: "/",
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff,woff2}"],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.destination === "image",
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "images" },
+          },
+        ],
+      },
 
       devOptions: {
         enabled: false,
