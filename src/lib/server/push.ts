@@ -61,6 +61,10 @@ export async function sendPushToPlayer(playerId: string, payload: PushPayload) {
 }
 
 async function sendPushToAllPlayers(payload: PushPayload) {
+  if (process.env.PUSH_TEST_ONLY_PLAYER_ID) {
+    await sendPushToPlayers([process.env.PUSH_TEST_ONLY_PLAYER_ID], payload);
+    return;
+  }
   const { data: players } = await supabaseAdmin
     .from('players')
     .select('player_id')

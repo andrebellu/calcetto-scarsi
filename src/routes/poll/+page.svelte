@@ -299,7 +299,7 @@
                     PUBLIC_VAPID_PUBLIC_KEY,
                 ),
             });
-            await fetch("/api/push/subscribe", {
+            const res = await fetch("/api/push/subscribe", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
@@ -307,8 +307,10 @@
                     subscription: sub.toJSON(),
                 }),
             });
+            if (!res.ok) throw new Error(await res.text());
             toast.success("Notifiche attivate!");
-        } catch {
+        } catch (e) {
+            console.error("subscribeToPush", e);
             toast.error("Impossibile attivare le notifiche");
         }
     }
