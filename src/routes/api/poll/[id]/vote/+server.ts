@@ -1,5 +1,6 @@
 import { json, error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
+import { notifyOptionThresholds } from "$lib/server/push";
 
 export const POST: RequestHandler = async ({ locals, params, request }) => {
   const supabase = locals.supabase;
@@ -15,13 +16,14 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
   const optionIds = body.option_ids ?? (body.option_id ? [body.option_id] : []);
   if (!poll_id || optionIds.length === 0) throw error(400, "Bad request");
 
+  const choice = body.choice ?? "yes";
   for (const oid of optionIds) {
     const { error: e } = await supabase.rpc("vote_upsert", {
       p_poll_id: poll_id,
       p_option_id: oid,
       p_voter_id: null,
       p_voter_token: token,
-      p_choice: body.choice ?? "yes",
+      p_choice: choice,
       p_player_id: body.player_id ?? null,
     });
     if (e) {
@@ -29,6 +31,15 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
       throw error(500, e.message);
     }
   }
+
+  if (choice === "yes") {
+    try {
+      await Promise.all(optionIds.map((oid) => notifyOptionThresholds(poll_id, oid)));
+    } catch (pushErr) {
+      console.error("push: errore notifica soglia", pushErr);
+    }
+  }
+
   return json({ ok: true });
 };
 

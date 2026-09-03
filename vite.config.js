@@ -10,6 +10,7 @@ export default defineConfig({
     SvelteKitPWA({
       strategies: "generateSW",
       registerType: "autoUpdate",
+      filename: "service-worker.js",
 
       workbox: {
         importScripts: ["/sw-push.js"],
