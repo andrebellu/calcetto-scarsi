@@ -1,6 +1,7 @@
 import { json, error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { mulberry32, shuffle } from "$lib/utils/random";
+import { sendPushToPlayers, formatMatchDate } from "$lib/server/push";
 
 export const POST: RequestHandler = async ({ params, locals, request }) => {
   const supabase = locals.supabase;
@@ -159,6 +160,8 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
         });
     }
 
+    let notifyPlayerIds: string[] = [];
+
     if (playersToPersist.length > 0) {
       const map = new Map<
         string,
@@ -199,6 +202,8 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
           await supabase.from("fixture").delete().eq("fixture_id", fixture_id);
         throw upErr;
       }
+
+      notifyPlayerIds = [...rowsA, ...rowsB].map((r) => r.player_id);
     }
 
     const { error: updErr } = await supabase
@@ -211,6 +216,25 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       .from("poll")
       .update({ status: "closed" })
       .eq("poll_id", poll_id);
+
+    if (notifyPlayerIds.length) {
+      try {
+        const { data: fixtureInfo } = await supabase
+          .from("fixture")
+          .select("match_date, luogo")
+          .eq("fixture_id", fixture_id)
+          .maybeSingle();
+        const dateLabel = formatMatchDate(fixtureInfo?.match_date ?? null);
+        const luogo = fixtureInfo?.luogo ? ` @ ${fixtureInfo.luogo}` : "";
+        await sendPushToPlayers(notifyPlayerIds, {
+          title: "Squadre pubblicate!",
+          body: `${dateLabel}${luogo} — controlla la tua squadra`,
+          url: "/planned",
+        });
+      } catch (pushErr) {
+        console.error("push notify-teams error", pushErr);
+      }
+    }
 
     return json({ ok: true, fixture_id });
   } catch (e: any) {

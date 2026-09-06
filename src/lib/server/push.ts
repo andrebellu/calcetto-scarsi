@@ -60,7 +60,7 @@ export async function sendPushToPlayer(playerId: string, payload: PushPayload) {
   return sendPushToPlayers([playerId], payload);
 }
 
-async function sendPushToAllPlayers(payload: PushPayload) {
+export async function sendPushToAllPlayers(payload: PushPayload) {
   if (process.env.PUSH_TEST_ONLY_PLAYER_ID) {
     await sendPushToPlayers([process.env.PUSH_TEST_ONLY_PLAYER_ID], payload);
     return;
@@ -79,7 +79,7 @@ const itDateLabel = new Intl.DateTimeFormat('it-IT', {
   month: 'short',
 });
 
-function formatMatchDate(matchDate: string | null) {
+export function formatMatchDate(matchDate: string | null) {
   if (!matchDate) return 'La data';
   const dt = new Date(matchDate);
   return Number.isFinite(dt.getTime()) ? itDateLabel.format(dt) : matchDate;

@@ -1,7 +1,25 @@
 <script lang="ts">
     import HomeCard from "$lib/HomeCard/HomeCard.svelte";
     import { homeCards } from "$lib/homeCardsData";
+    import { onMount } from "svelte";
     export let data;
+
+    const latestUpdate = {
+        id: "2026-09-link-notifiche",
+        title: "Novità",
+        body: 'Ora puoi votare da più dispositivi con lo stesso nome (bottone "Altro dispositivo" nel sondaggio) e ricevere notifiche push quando un orario si riempie.',
+    };
+
+    let showUpdateBanner = false;
+    onMount(() => {
+        showUpdateBanner =
+            localStorage.getItem("dismissedUpdate") !== latestUpdate.id;
+    });
+
+    function dismissUpdate() {
+        localStorage.setItem("dismissedUpdate", latestUpdate.id);
+        showUpdateBanner = false;
+    }
 </script>
 
 <div
@@ -36,6 +54,34 @@
                     >
                     Entra come admin
                 </a>
+            </div>
+        {/if}
+
+        <!-- What's new banner -->
+        {#if showUpdateBanner}
+            <div
+                class="mb-5 w-full bg-primary-950/30 border border-primary-700/40 rounded-xl px-4 py-3 flex items-start gap-3"
+            >
+                <span
+                    class="material-symbols-outlined text-primary-400 text-lg mt-0.5"
+                    >campaign</span
+                >
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-surface-100">
+                        {latestUpdate.title}
+                    </p>
+                    <p class="text-xs text-surface-400 mt-0.5">
+                        {latestUpdate.body}
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onclick={dismissUpdate}
+                    aria-label="Chiudi"
+                    class="text-surface-500 hover:text-surface-300 transition shrink-0"
+                >
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>
             </div>
         {/if}
 
