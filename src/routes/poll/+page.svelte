@@ -8,6 +8,7 @@
     import { buttonVariants } from "$lib/components/ui/button/index.js";
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
+    import { page } from "$app/state";
     import Button from "$lib/components/ui/button/button.svelte";
     import * as Collapsible from "$lib/components/ui/collapsible/index.js";
     import ChevronsUpDown from "@lucide/svelte/icons/chevrons-up-down";
@@ -31,6 +32,14 @@
             const t = setTimeout(() => goto("/"), 3000);
             return () => clearTimeout(t);
         }
+    });
+
+    onMount(() => {
+        const linkStatus = page.url.searchParams.get("linkStatus");
+        if (linkStatus === "ok") toast.success("Dispositivo collegato!");
+        else if (linkStatus === "expired")
+            toast.error("Link scaduto, generane uno nuovo");
+        if (linkStatus) goto("/poll", { replaceState: true });
     });
 
     const { data } = $props<{
@@ -279,6 +288,32 @@
         isAbsent = false;
         if (identityCookieName)
             document.cookie = `${identityCookieName}=; path=/; max-age=0`;
+    }
+
+    let deviceLinkUrl = $state<string | null>(null);
+    let showLinkDialog = $state(false);
+
+    async function shareDeviceLink() {
+        if (!data.poll) return;
+        try {
+            const res = await fetch(
+                `/api/poll/${data.poll.poll_id}/link-device`,
+                { method: "POST" },
+            );
+            if (!res.ok) throw new Error(await res.text());
+            const { token } = await res.json();
+            deviceLinkUrl = `${location.origin}/poll?linkToken=${token}`;
+            showLinkDialog = true;
+        } catch (e) {
+            console.error("shareDeviceLink", e);
+            toast.error("Impossibile generare il link");
+        }
+    }
+
+    async function copyDeviceLink() {
+        if (!deviceLinkUrl) return;
+        await navigator.clipboard.writeText(deviceLinkUrl);
+        toast.success("Link copiato");
     }
 
     function urlBase64ToUint8Array(base64String: string) {
@@ -1137,6 +1172,12 @@
                                         <button
                                             type="button"
                                             class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors"
+                                            onclick={shareDeviceLink}
+                                            >Altro dispositivo</button
+                                        >
+                                        <button
+                                            type="button"
+                                            class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors"
                                             onclick={resetPlayerIdentity}
                                             >Cambia</button
                                         >
@@ -1144,6 +1185,39 @@
                                 {/if}
                             </div>
                         </div>
+
+                        <Dialog.Root bind:open={showLinkDialog}>
+                            <Dialog.Content class="max-w-sm" portalProps={undefined}>
+                                <Dialog.Header class="">
+                                    <Dialog.Title class=""
+                                        >Vota anche da un altro dispositivo</Dialog.Title
+                                    >
+                                    <Dialog.Description class=""
+                                        >Apri questo link sull'altro dispositivo
+                                        (es. il telefono) per votare anche da lì
+                                        con lo stesso nome. Valido 30
+                                        minuti.</Dialog.Description
+                                    >
+                                </Dialog.Header>
+                                <div class="flex gap-2 items-center">
+                                    <input
+                                        readonly
+                                        value={deviceLinkUrl ?? ""}
+                                        class="flex h-9 w-full rounded-md border border-input bg-muted px-3 py-2 text-xs"
+                                        onclick={(e) =>
+                                            (
+                                                e.target as HTMLInputElement
+                                            ).select()}
+                                    />
+                                    <Button
+                                        size="sm"
+                                        disabled={false}
+                                        onclick={copyDeviceLink}
+                                        class="shrink-0">Copia</Button
+                                    >
+                                </div>
+                            </Dialog.Content>
+                        </Dialog.Root>
 
                         <div class="space-y-3">
                             <div class="flex items-center gap-2 px-1">

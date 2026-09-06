@@ -1,7 +1,8 @@
 // src/routes/poll/+page.server.ts
+import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async ({ locals, depends, cookies }) => {
+export const load: PageServerLoad = async ({ locals, depends, cookies, url }) => {
   const supabase = locals.supabase;
   const { user, session } = await locals.safeGetSession();
   const token = locals.voterToken;
@@ -17,6 +18,31 @@ export const load: PageServerLoad = async ({ locals, depends, cookies }) => {
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  // Link "vota anche da un altro dispositivo": consuma il token e associa
+  // l'identità del giocatore anche a questo browser, bypassando la lista
+  // "nomi disponibili" (che altrimenti nasconde i nomi già scelti da un
+  // altro voter_token, vedi usedRows più sotto).
+  const linkToken = url.searchParams.get("linkToken");
+  if (linkToken && poll) {
+    const { data: linkRow } = await supabase
+      .from("player_link_token")
+      .select("player_id, expires_at")
+      .eq("token", linkToken)
+      .eq("poll_id", poll.poll_id)
+      .maybeSingle();
+
+    await supabase.from("player_link_token").delete().eq("token", linkToken);
+
+    const linkOk = !!linkRow && new Date(linkRow.expires_at) > new Date();
+    if (linkOk) {
+      cookies.set(getIdentityCookieName(poll.poll_id), linkRow!.player_id, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+      });
+    }
+    throw redirect(303, linkOk ? "/poll?linkStatus=ok" : "/poll?linkStatus=expired");
+  }
 
   const { data: recentPolls = [] } = await supabase
     .from("poll")
