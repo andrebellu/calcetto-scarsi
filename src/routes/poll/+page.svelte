@@ -1739,13 +1739,13 @@
                             </div>
 
                             <div
-                                class="p-3 space-y-2 border-t md:border-t-0 bg-blue-50/30 dark:bg-blue-950/10"
+                                class="p-3 space-y-2 border-t md:border-t-0 bg-team-blue/5"
                                 ondrop={(e) =>
                                     handleDrop(e, "A", mainPoll.poll_id)}
                                 ondragover={(e) => e.preventDefault()}
                             >
                                 <p
-                                    class="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider px-1"
+                                    class="text-xs font-semibold text-team-blue uppercase tracking-wider px-1"
                                 >
                                     Squadra A ({(
                                         teamsByPoll?.[mainPoll.poll_id]?.A ?? []
@@ -1757,7 +1757,7 @@
                                             draggable="true"
                                             ondragstart={(e) =>
                                                 handleDragStart(e, v)}
-                                            class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white dark:bg-blue-950/40 border border-blue-100 dark:border-blue-800 shadow-sm cursor-grab"
+                                            class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-team-blue/10 border border-team-blue/25 cursor-grab"
                                         >
                                             <span class="text-sm font-medium"
                                                 >{v.name}</span
@@ -1777,7 +1777,7 @@
                                     {/each}
                                     {#if !(teamsByPoll?.[mainPoll.poll_id]?.A ?? []).length}
                                         <li
-                                            class="flex items-center justify-center h-28 text-xs text-blue-400 italic"
+                                            class="flex items-center justify-center h-28 text-xs text-team-blue/70 italic"
                                         >
                                             Trascina qui
                                         </li>
@@ -1786,13 +1786,13 @@
                             </div>
 
                             <div
-                                class="p-3 space-y-2 border-t md:border-t-0 bg-orange-50/30 dark:bg-orange-950/10"
+                                class="p-3 space-y-2 border-t md:border-t-0 bg-team-red/5"
                                 ondrop={(e) =>
                                     handleDrop(e, "B", mainPoll.poll_id)}
                                 ondragover={(e) => e.preventDefault()}
                             >
                                 <p
-                                    class="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wider px-1"
+                                    class="text-xs font-semibold text-team-red uppercase tracking-wider px-1"
                                 >
                                     Squadra B ({(
                                         teamsByPoll?.[mainPoll.poll_id]?.B ?? []
@@ -1804,7 +1804,7 @@
                                             draggable="true"
                                             ondragstart={(e) =>
                                                 handleDragStart(e, v)}
-                                            class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white dark:bg-orange-950/40 border border-orange-100 dark:border-orange-800 shadow-sm cursor-grab"
+                                            class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-team-red/10 border border-team-red/25 cursor-grab"
                                         >
                                             <span class="text-sm font-medium"
                                                 >{v.name}</span
@@ -1824,7 +1824,7 @@
                                     {/each}
                                     {#if !(teamsByPoll?.[mainPoll.poll_id]?.B ?? []).length}
                                         <li
-                                            class="flex items-center justify-center h-28 text-xs text-orange-400 italic"
+                                            class="flex items-center justify-center h-28 text-xs text-team-red/70 italic"
                                         >
                                             Trascina qui
                                         </li>
