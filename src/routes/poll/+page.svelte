@@ -21,6 +21,8 @@
     import Check from "@lucide/svelte/icons/check";
     import ChevronDown from "@lucide/svelte/icons/chevron-down";
     import Shuffle from "@lucide/svelte/icons/shuffle";
+    import Bell from "@lucide/svelte/icons/bell";
+    import BellOff from "@lucide/svelte/icons/bell-off";
     import { toast } from "svelte-sonner";
     import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
     import Navbar from "$lib/Navbar/Navbar.svelte";
@@ -386,29 +388,39 @@
         }
     }
 
-    $effect(() => {
+    let pushAvailable = $state(false);
+    let pushSubscribed = $state(false);
+
+    async function refreshPushStatus() {
         if (
-            !chosenPlayerId ||
             typeof Notification === "undefined" ||
-            Notification.permission !== "default" ||
             !("serviceWorker" in navigator)
-        )
+        ) {
+            pushAvailable = false;
             return;
-        navigator.serviceWorker.ready.then(async (reg) => {
-            const existing = await reg.pushManager.getSubscription();
-            if (existing) return;
-            toast.info("Vuoi ricevere notifiche per i sondaggi?", {
-                action: {
-                    label: "Attiva",
-                    onClick: async () => {
-                        const perm = await Notification.requestPermission();
-                        if (perm === "granted") await subscribeToPush();
-                    },
-                },
-                duration: 8000,
-            });
-        });
+        }
+        pushAvailable = true;
+        const reg = await navigator.serviceWorker.ready;
+        pushSubscribed = !!(await reg.pushManager.getSubscription());
+    }
+
+    $effect(() => {
+        if (chosenPlayerId) refreshPushStatus();
     });
+
+    async function enablePushNotifications() {
+        if (Notification.permission === "denied") {
+            toast.error(
+                "Notifiche bloccate: abilitale dalle impostazioni del browser",
+            );
+            return;
+        }
+        const perm = await Notification.requestPermission();
+        if (perm === "granted") {
+            await subscribeToPush();
+            await refreshPushStatus();
+        }
+    }
 
     let closing = $state(false);
     let reminding = $state(false);
@@ -1163,60 +1175,80 @@
                                         </AlertDialog.Root>
                                     </div>
                                 {:else}
-                                    <div class="flex items-center gap-3">
-                                        <div
-                                            class="size-9 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-sm shrink-0"
-                                        >
-                                            {players
-                                                .find(
-                                                    (p) =>
-                                                        p.player_id ===
-                                                        chosenPlayerId,
-                                                )
-                                                ?.name.charAt(0)}
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p
-                                                class="text-sm font-medium truncate"
+                                    <div class="flex flex-col gap-3">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="size-9 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-sm shrink-0"
                                             >
-                                                {players.find(
-                                                    (p) =>
-                                                        p.player_id ===
-                                                        chosenPlayerId,
-                                                )?.name}
-                                            </p>
-                                            <p
-                                                class="text-xs text-muted-foreground"
-                                            >
-                                                Identificato
-                                            </p>
+                                                {players
+                                                    .find(
+                                                        (p) =>
+                                                            p.player_id ===
+                                                            chosenPlayerId,
+                                                    )
+                                                    ?.name.charAt(0)}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p
+                                                    class="text-sm font-medium truncate"
+                                                >
+                                                    {players.find(
+                                                        (p) =>
+                                                            p.player_id ===
+                                                            chosenPlayerId,
+                                                    )?.name}
+                                                </p>
+                                                <p
+                                                    class="text-xs text-muted-foreground"
+                                                >
+                                                    Identificato
+                                                </p>
+                                            </div>
                                         </div>
-                                        <Button
-                                            variant={isAbsent
-                                                ? "default"
-                                                : "outline"}
-                                            size="sm"
-                                            class="shrink-0 text-xs {isAbsent
-                                                ? 'bg-amber-500 hover:bg-amber-600 text-white border-transparent'
-                                                : 'border-muted-foreground/30 text-muted-foreground'}"
-                                            onclick={toggleAbsence}
-                                        >
-                                            {isAbsent
-                                                ? "✓ Assente"
-                                                : "Segna assente"}
-                                        </Button>
-                                        <button
-                                            type="button"
-                                            class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors"
-                                            onclick={shareDeviceLink}
-                                            >Altro dispositivo</button
-                                        >
-                                        <button
-                                            type="button"
-                                            class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors"
-                                            onclick={resetPlayerIdentity}
-                                            >Cambia</button
-                                        >
+                                        <div class="flex flex-wrap gap-2">
+                                            <Button
+                                                variant={isAbsent
+                                                    ? "default"
+                                                    : "outline"}
+                                                size="sm"
+                                                class="text-xs {isAbsent
+                                                    ? 'bg-amber-500 hover:bg-amber-600 text-white border-transparent'
+                                                    : 'border-muted-foreground/30 text-muted-foreground'}"
+                                                onclick={toggleAbsence}
+                                            >
+                                                {isAbsent
+                                                    ? "✓ Assente"
+                                                    : "Segna assente"}
+                                            </Button>
+                                            {#if pushAvailable}
+                                                <button
+                                                    type="button"
+                                                    disabled={pushSubscribed}
+                                                    class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors inline-flex items-center gap-1.5 disabled:opacity-60 disabled:hover:bg-transparent"
+                                                    onclick={enablePushNotifications}
+                                                >
+                                                    {#if pushSubscribed}
+                                                        <Bell class="size-3.5" />
+                                                        Notifiche attive
+                                                    {:else}
+                                                        <BellOff class="size-3.5" />
+                                                        Attiva notifiche
+                                                    {/if}
+                                                </button>
+                                            {/if}
+                                            <button
+                                                type="button"
+                                                class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors"
+                                                onclick={shareDeviceLink}
+                                                >Altro dispositivo</button
+                                            >
+                                            <button
+                                                type="button"
+                                                class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors"
+                                                onclick={resetPlayerIdentity}
+                                                >Cambia</button
+                                            >
+                                        </div>
                                     </div>
                                 {/if}
                             </div>
