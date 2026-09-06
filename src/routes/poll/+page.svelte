@@ -34,13 +34,48 @@
         }
     });
 
+    let showAcceptLinkDialog = $state(false);
+    let acceptingLink = $state(false);
+    let capturedLinkToken = $state<string | null>(null);
+
     onMount(() => {
-        const linkStatus = page.url.searchParams.get("linkStatus");
-        if (linkStatus === "ok") toast.success("Dispositivo collegato!");
-        else if (linkStatus === "expired")
+        if (data.pendingLinkToken?.valid) {
+            capturedLinkToken = data.pendingLinkToken.token;
+            showAcceptLinkDialog = true;
+        } else if (data.pendingLinkToken) {
             toast.error("Link scaduto, generane uno nuovo");
-        if (linkStatus) goto("/poll", { replaceState: true });
+        }
+        if (data.pendingLinkToken) goto("/poll", { replaceState: true, keepFocus: true, noScroll: true });
     });
+
+    async function confirmAcceptLink() {
+        if (!capturedLinkToken || !data.poll) return;
+        acceptingLink = true;
+        try {
+            const res = await fetch(
+                `/api/poll/${data.poll.poll_id}/link-device/consume`,
+                {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ token: capturedLinkToken }),
+                },
+            );
+            const body = await res.json().catch(() => ({ ok: false }));
+            if (res.ok && body.ok) {
+                toast.success("Dispositivo collegato!");
+                showAcceptLinkDialog = false;
+                await goto("/poll", { invalidateAll: true });
+            } else {
+                toast.error("Link scaduto, generane uno nuovo");
+                showAcceptLinkDialog = false;
+            }
+        } catch (e) {
+            console.error("confirmAcceptLink", e);
+            toast.error("Errore nel collegare il dispositivo");
+        } finally {
+            acceptingLink = false;
+        }
+    }
 
     const { data } = $props<{
         data: {
@@ -66,6 +101,7 @@
             session: any;
             isLogged: boolean;
             canVote: boolean;
+            pendingLinkToken: { token: string; valid: boolean } | null;
         };
     }>();
 
@@ -1218,6 +1254,35 @@
                                 </div>
                             </Dialog.Content>
                         </Dialog.Root>
+
+                        <AlertDialog.Root bind:open={showAcceptLinkDialog}>
+                            <AlertDialog.Content class="" portalProps={undefined}>
+                                <AlertDialog.Header class="">
+                                    <AlertDialog.Title class=""
+                                        >Collegare questo dispositivo?</AlertDialog.Title
+                                    >
+                                    <AlertDialog.Description class=""
+                                        >Potrai votare da qui con lo stesso
+                                        nome usato sull'altro dispositivo.</AlertDialog.Description
+                                    >
+                                </AlertDialog.Header>
+                                <AlertDialog.Footer class="">
+                                    <AlertDialog.Cancel
+                                        class={buttonVariants({
+                                            variant: "outline",
+                                        })}>Annulla</AlertDialog.Cancel
+                                    >
+                                    <AlertDialog.Action
+                                        class={buttonVariants({
+                                            variant: "default",
+                                        })}
+                                        disabled={acceptingLink}
+                                        onclick={confirmAcceptLink}
+                                        >Collega</AlertDialog.Action
+                                    >
+                                </AlertDialog.Footer>
+                            </AlertDialog.Content>
+                        </AlertDialog.Root>
 
                         <div class="space-y-3">
                             <div class="flex items-center gap-2 px-1">

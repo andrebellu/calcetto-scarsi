@@ -1,5 +1,4 @@
 // src/routes/poll/+page.server.ts
-import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ locals, depends, cookies, url }) => {
@@ -19,29 +18,24 @@ export const load: PageServerLoad = async ({ locals, depends, cookies, url }) =>
     .limit(1)
     .maybeSingle();
 
-  // Link "vota anche da un altro dispositivo": consuma il token e associa
-  // l'identità del giocatore anche a questo browser, bypassando la lista
-  // "nomi disponibili" (che altrimenti nasconde i nomi già scelti da un
-  // altro voter_token, vedi usedRows più sotto).
+  // Link "vota anche da un altro dispositivo": il consumo effettivo del
+  // token avviene solo su conferma esplicita dell'utente (POST verso
+  // link-device/consume), MAI qui nella load — un GET su questa pagina può
+  // arrivare anche da un crawler di anteprima link (WhatsApp/Telegram/ecc.)
+  // e brucerebbe il token prima che l'utente lo apra davvero.
   const linkToken = url.searchParams.get("linkToken");
+  let pendingLinkToken: { token: string; valid: boolean } | null = null;
   if (linkToken && poll) {
     const { data: linkRow } = await supabase
       .from("player_link_token")
-      .select("player_id, expires_at")
+      .select("expires_at")
       .eq("token", linkToken)
       .eq("poll_id", poll.poll_id)
       .maybeSingle();
-
-    await supabase.from("player_link_token").delete().eq("token", linkToken);
-
-    const linkOk = !!linkRow && new Date(linkRow.expires_at) > new Date();
-    if (linkOk) {
-      cookies.set(getIdentityCookieName(poll.poll_id), linkRow!.player_id, {
-        path: "/",
-        maxAge: 60 * 60 * 24 * 365,
-      });
-    }
-    throw redirect(303, linkOk ? "/poll?linkStatus=ok" : "/poll?linkStatus=expired");
+    pendingLinkToken = {
+      token: linkToken,
+      valid: !!linkRow && new Date(linkRow.expires_at) > new Date(),
+    };
   }
 
   const { data: recentPolls = [] } = await supabase
@@ -57,6 +51,7 @@ export const load: PageServerLoad = async ({ locals, depends, cookies, url }) =>
       session,
       isLogged: !!user,
       canVote: false,
+      pendingLinkToken,
       streamed: {
         pollData: Promise.resolve({
           options: [],
@@ -174,6 +169,7 @@ export const load: PageServerLoad = async ({ locals, depends, cookies, url }) =>
     session,
     isLogged: !!user,
     canVote: poll.status === "open",
+    pendingLinkToken,
     streamed: {
       pollData: pollDataPromise,
     },
