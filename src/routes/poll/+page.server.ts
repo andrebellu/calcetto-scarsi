@@ -66,6 +66,9 @@ export const load: PageServerLoad = async ({ locals, depends, cookies, url }) =>
     };
   }
 
+  const cookieName = getIdentityCookieName(poll.poll_id);
+  const cookieVal = cookies.get(cookieName);
+
   const pollDataPromise = Promise.all([
     // allPlayers
     supabase
@@ -88,12 +91,21 @@ export const load: PageServerLoad = async ({ locals, depends, cookies, url }) =>
       .select("option_id, match_date, luogo, time_of_day, note")
       .eq("poll_id", poll.poll_id)
       .order("match_date", { ascending: true }),
-    // myVotes - sempre basato su token anonimo, indipendentemente dal login
-    supabase
-      .from("poll_vote")
-      .select("option_id, choice, player_id")
-      .eq("poll_id", poll.poll_id)
-      .eq("voter_token", token),
+    // myVotes - se l'identità del giocatore è nota (cookie, anche collegato
+    // da un altro dispositivo via "Altro dispositivo") i voti si cercano per
+    // player_id, così contano anche quelli dati da un voter_token diverso;
+    // altrimenti si usa il voter_token anonimo di questo browser.
+    cookieVal
+      ? supabase
+          .from("poll_vote")
+          .select("option_id, choice, player_id")
+          .eq("poll_id", poll.poll_id)
+          .eq("player_id", cookieVal)
+      : supabase
+          .from("poll_vote")
+          .select("option_id, choice, player_id")
+          .eq("poll_id", poll.poll_id)
+          .eq("voter_token", token),
     // allVotes
     supabase
       .from("poll_vote")
@@ -124,8 +136,6 @@ export const load: PageServerLoad = async ({ locals, depends, cookies, url }) =>
     // chosenPlayerId logic
     // For logged users, prefer explicit cookie identity and avoid auto-reusing
     // previous account votes (shared admin account scenario).
-    const cookieName = getIdentityCookieName(poll.poll_id);
-    const cookieVal = cookies.get(cookieName);
     const validCookiePlayer =
       cookieVal && safeAllPlayers.find((p) => p.player_id === cookieVal)
         ? cookieVal

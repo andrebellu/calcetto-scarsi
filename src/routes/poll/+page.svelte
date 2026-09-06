@@ -390,6 +390,7 @@
 
     let pushAvailable = $state(false);
     let pushSubscribed = $state(false);
+    let pushPermission = $state<NotificationPermission | null>(null);
 
     async function refreshPushStatus() {
         if (
@@ -400,6 +401,7 @@
             return;
         }
         pushAvailable = true;
+        pushPermission = Notification.permission;
         const reg = await navigator.serviceWorker.ready;
         pushSubscribed = !!(await reg.pushManager.getSubscription());
     }
@@ -411,7 +413,8 @@
     async function enablePushNotifications() {
         if (Notification.permission === "denied") {
             toast.error(
-                "Notifiche bloccate: abilitale dalle impostazioni del browser",
+                "Notifiche bloccate per questo sito. Sblocca dalle impostazioni del browser (icona lucchetto/info accanto all'indirizzo → Notifiche → Consenti), poi riprova.",
+                { duration: 8000 },
             );
             return;
         }
@@ -1205,13 +1208,13 @@
                                                 </p>
                                             </div>
                                         </div>
-                                        <div class="flex flex-wrap gap-2">
+                                        <div class="grid grid-cols-2 gap-2">
                                             <Button
                                                 variant={isAbsent
                                                     ? "default"
                                                     : "outline"}
                                                 size="sm"
-                                                class="text-xs {isAbsent
+                                                class="text-xs w-full {isAbsent
                                                     ? 'bg-amber-500 hover:bg-amber-600 text-white border-transparent'
                                                     : 'border-muted-foreground/30 text-muted-foreground'}"
                                                 onclick={toggleAbsence}
@@ -1220,34 +1223,40 @@
                                                     ? "✓ Assente"
                                                     : "Segna assente"}
                                             </Button>
-                                            {#if pushAvailable}
-                                                <button
-                                                    type="button"
-                                                    disabled={pushSubscribed}
-                                                    class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors inline-flex items-center gap-1.5 disabled:opacity-60 disabled:hover:bg-transparent"
-                                                    onclick={enablePushNotifications}
-                                                >
-                                                    {#if pushSubscribed}
-                                                        <Bell class="size-3.5" />
-                                                        Notifiche attive
-                                                    {:else}
-                                                        <BellOff class="size-3.5" />
-                                                        Attiva notifiche
-                                                    {/if}
-                                                </button>
-                                            {/if}
-                                            <button
-                                                type="button"
-                                                class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors"
-                                                onclick={shareDeviceLink}
-                                                >Altro dispositivo</button
-                                            >
                                             <button
                                                 type="button"
                                                 class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors"
                                                 onclick={resetPlayerIdentity}
                                                 >Cambia</button
                                             >
+                                            <button
+                                                type="button"
+                                                class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors"
+                                                onclick={shareDeviceLink}
+                                                >Altro dispositivo</button
+                                            >
+                                            {#if pushAvailable}
+                                                <button
+                                                    type="button"
+                                                    disabled={pushSubscribed}
+                                                    class="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted transition-colors inline-flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:hover:bg-transparent {pushPermission ===
+                                                    'denied'
+                                                        ? 'border-destructive/40 text-destructive'
+                                                        : ''}"
+                                                    onclick={enablePushNotifications}
+                                                >
+                                                    {#if pushSubscribed}
+                                                        <Bell class="size-3.5" />
+                                                        Notifiche attive
+                                                    {:else if pushPermission === "denied"}
+                                                        <BellOff class="size-3.5" />
+                                                        Notifiche bloccate
+                                                    {:else}
+                                                        <BellOff class="size-3.5" />
+                                                        Notifiche
+                                                    {/if}
+                                                </button>
+                                            {/if}
                                         </div>
                                     </div>
                                 {/if}
