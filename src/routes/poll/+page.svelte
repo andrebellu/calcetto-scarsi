@@ -403,7 +403,21 @@
         pushAvailable = true;
         pushPermission = Notification.permission;
         const reg = await navigator.serviceWorker.ready;
-        pushSubscribed = !!(await reg.pushManager.getSubscription());
+        const sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+            pushSubscribed = false;
+            return;
+        }
+        try {
+            const res = await fetch(
+                `/api/push/subscribe?endpoint=${encodeURIComponent(sub.endpoint)}`,
+            );
+            const { player_id } = await res.json();
+            pushSubscribed = player_id === chosenPlayerId;
+        } catch (e) {
+            console.error("refreshPushStatus", e);
+            pushSubscribed = false;
+        }
     }
 
     $effect(() => {

@@ -30,6 +30,24 @@ export const POST: RequestHandler = async ({ request }) => {
   return json({ ok: true });
 };
 
+export const GET: RequestHandler = async ({ url }) => {
+  const endpoint = url.searchParams.get('endpoint');
+  if (!endpoint) throw error(400, 'endpoint richiesto');
+
+  const { data, error: err } = await supabaseAdmin
+    .from('push_subscription')
+    .select('player_id')
+    .eq('endpoint', endpoint)
+    .maybeSingle();
+
+  if (err) {
+    console.error('push status error', err);
+    throw error(500, 'Errore lettura subscription');
+  }
+
+  return json({ player_id: data?.player_id ?? null });
+};
+
 export const DELETE: RequestHandler = async ({ request }) => {
   const { endpoint } = (await request.json()) as { endpoint?: string };
   if (!endpoint) throw error(400, 'endpoint richiesto');
