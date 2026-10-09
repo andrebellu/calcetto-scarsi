@@ -1,18 +1,21 @@
 // src/routes/api/poll/+server.ts
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { requireUser } from '$lib/server/auth';
 import { sendPushToAllPlayers } from '$lib/server/push';
 
 export const POST: RequestHandler = async ({ locals, request }) => {
   const supabase = locals.supabase;
-  const { user } = await locals.safeGetSession();
-  if (!user) throw error(401, 'Unauthorized');
+  const user = await requireUser(locals);
 
-  const body = await request.json();
-  const { title, options } = body as {
-    title: string;
-    options: Array<{ match_date: string; luogo: string; time_of_day: string; note?: string }>;
+  const body = await request.json().catch(() => null);
+  const { title: rawTitle, options } = (body ?? {}) as {
+    title?: string;
+    options?: Array<{ match_date: string; luogo: string; time_of_day: string; note?: string }>;
   };
+  const title = typeof rawTitle === 'string' ? rawTitle.trim() : '';
+  if (!title) throw error(400, 'Titolo obbligatorio');
+  if (options !== undefined && !Array.isArray(options)) throw error(400, 'options deve essere un array');
 
   const { data: newPoll, error: pollErr } = await supabase
     .from('poll')

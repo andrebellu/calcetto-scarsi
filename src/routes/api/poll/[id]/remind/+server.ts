@@ -1,14 +1,15 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { parsePositiveInt } from '$lib/domain/fixture';
+import { requireUser } from '$lib/server/auth';
 import { sendPushToPlayers } from '$lib/server/push';
 
 export const POST: RequestHandler = async ({ locals, params }) => {
   const supabase = locals.supabase;
-  const { user } = await locals.safeGetSession();
-  if (!user) throw error(401, 'Unauthorized');
+  await requireUser(locals);
 
-  const poll_id = Number(params.id);
-  if (!poll_id || Number.isNaN(poll_id)) throw error(400, 'poll_id non valido');
+  const poll_id = parsePositiveInt(params.id);
+  if (!poll_id) throw error(400, 'poll_id non valido');
 
   const { data: poll } = await supabase.from('poll').select('title').eq('poll_id', poll_id).maybeSingle();
 
