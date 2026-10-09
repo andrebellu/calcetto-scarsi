@@ -1,7 +1,8 @@
 import type { PageServerLoad } from './$types';
-import { supabase } from '$lib/supabaseClient';
 
 export const load: PageServerLoad = async ({ locals }) => {
+  // Client legato alla richiesta: rispetta sessione/cookie e le policy RLS.
+  const supabase = locals.supabase;
   const isAuthenticated = !!locals?.user;
 
   // ultima convocazione confermata

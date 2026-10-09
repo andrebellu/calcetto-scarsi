@@ -1,4 +1,4 @@
-import { supabase } from "$lib/supabaseClient";
+import type { PageServerLoad } from "./$types";
 
 function normalizeSeasonFilter(raw: string | null, seasonValues: string[]) {
     if (!raw || raw === "all") return "all";
@@ -15,7 +15,9 @@ function playerForRow(row: any) {
     return Array.isArray(row?.player) ? row.player[0] : row?.player;
 }
 
-export async function load({ locals, url }: { locals: any; url: URL }) {
+export const load: PageServerLoad = async ({ locals, url }) => {
+    // Client legato alla richiesta: rispetta sessione/cookie e le policy RLS.
+    const supabase = locals.supabase;
     const { data: seasonRows } = await supabase
         .from("matches")
         .select("season, match_date")
@@ -108,4 +110,4 @@ export async function load({ locals, url }: { locals: any; url: URL }) {
         isAuthenticated,
         error: null,
     };
-}
+};
