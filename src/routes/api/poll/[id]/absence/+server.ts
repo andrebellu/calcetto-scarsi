@@ -1,14 +1,19 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { parsePositiveInt } from '$lib/domain/fixture';
 
 export const POST: RequestHandler = async ({ params, request, locals }) => {
-    const { id } = params;
-    const { absent, player_id } = await request.json();
+    const id = parsePositiveInt(params.id);
+    if (!id) error(400, 'poll_id non valido');
 
-    const targetPlayerId = player_id;
+    const { absent, player_id } = (await request.json().catch(() => ({}))) as {
+        absent?: boolean;
+        player_id?: unknown;
+    };
 
+    const targetPlayerId = typeof player_id === 'string' ? player_id.trim() : '';
     if (!targetPlayerId) {
-        return error(400, 'player_id required');
+        error(400, 'player_id required');
     }
 
     const supabase = locals.supabase;
@@ -20,7 +25,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
         if (err) {
             console.error(err);
-            return error(500, 'Database error');
+            error(500, 'Database error');
         }
     } else {
         const { error: err } = await supabase
@@ -31,7 +36,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
         if (err) {
             console.error(err);
-            return error(500, 'Database error');
+            error(500, 'Database error');
         }
     }
 

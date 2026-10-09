@@ -1,6 +1,8 @@
-import { supabase } from "$lib/supabaseClient";
+import type { Actions, PageServerLoad } from "./$types";
 
-export async function load({ locals }: { locals: any }) {
+export const load: PageServerLoad = async ({ locals }) => {
+  // Client legato alla richiesta: rispetta sessione/cookie e le policy RLS.
+  const supabase = locals.supabase;
   let currentUserPlayerId = null;
   if (locals.session) {
     const { data } = await supabase
@@ -64,23 +66,18 @@ export async function load({ locals }: { locals: any }) {
     isAuthenticated = true;
   }
 
-  console.log("Current User Player ID:", currentUserPlayerId);
-
   return {
     streamed: {
-      players: playersPromise.then(p => {
-        console.log("Claimable players:", p.filter(x => x.is_claimable).map(x => x.name));
-        return p;
-      }),
+      players: playersPromise,
     },
     isAuthenticated,
     currentUserPlayerId,
     error: null,
   };
-}
+};
 
-export const actions = {
-  claim: async ({ request, locals }: { request: any, locals: any }) => {
+export const actions: Actions = {
+  claim: async ({ request, locals }) => {
     const { supabase, session } = locals;
     if (!session) return { error: "Non autorizzato" };
 

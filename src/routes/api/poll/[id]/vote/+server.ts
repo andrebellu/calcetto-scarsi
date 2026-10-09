@@ -1,23 +1,29 @@
 import { json, error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { notifyOptionThresholds } from "$lib/server/push";
+import { isVoteChoice, parsePositiveInt } from "$lib/domain/fixture";
 
 export const POST: RequestHandler = async ({ locals, params, request }) => {
   const supabase = locals.supabase;
   const token = locals.voterToken;
-  const poll_id = Number(params.id);
+  const poll_id = parsePositiveInt(params.id);
 
-  const body = (await request.json()) as {
+  const body = (await request.json().catch(() => ({}))) as {
     option_id?: number;
     option_ids?: number[];
     choice?: "yes" | "no";
     player_id?: string;
   };
-  const optionIds = body.option_ids ?? (body.option_id ? [body.option_id] : []);
-  if (!poll_id || optionIds.length === 0) throw error(400, "Bad request");
+  const rawOptionIds = body.option_ids ?? (body.option_id ? [body.option_id] : []);
+  if (!poll_id || !Array.isArray(rawOptionIds) || rawOptionIds.length === 0) {
+    throw error(400, "Bad request");
+  }
+  const optionIds = [...new Set(rawOptionIds.map(parsePositiveInt))];
+  if (optionIds.some((oid) => oid === null)) throw error(400, "option_id non valido");
 
   const choice = body.choice ?? "yes";
-  for (const oid of optionIds) {
+  if (!isVoteChoice(choice)) throw error(400, "choice deve essere 'yes' o 'no'");
+  for (const oid of optionIds as number[]) {
     const { error: e } = await supabase.rpc("vote_upsert", {
       p_poll_id: poll_id,
       p_option_id: oid,
@@ -34,7 +40,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 
   if (choice === "yes") {
     try {
-      await Promise.all(optionIds.map((oid) => notifyOptionThresholds(poll_id, oid)));
+      await Promise.all((optionIds as number[]).map((oid) => notifyOptionThresholds(poll_id, oid)));
     } catch (pushErr) {
       console.error("push: errore notifica soglia", pushErr);
     }
@@ -46,8 +52,8 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 export const DELETE: RequestHandler = async ({ locals, params, url }) => {
   const supabase = locals.supabase;
   const token = locals.voterToken;
-  const poll_id = Number(params.id);
-  const option_id = Number(url.searchParams.get('option_id'));
+  const poll_id = parsePositiveInt(params.id);
+  const option_id = parsePositiveInt(url.searchParams.get('option_id'));
   if (!poll_id || !option_id) throw error(400, 'option_id required');
 
   const { error: e } = await supabase.from('poll_vote').delete()

@@ -1,244 +1,183 @@
-import { json, error } from "@sveltejs/kit";
-import type { RequestHandler } from "./$types";
-import { mulberry32, shuffle } from "$lib/utils/random";
-import { sendPushToPlayers, formatMatchDate } from "$lib/server/push";
+import { json, error, isHttpError } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import { sendPushToPlayers, formatMatchDate } from '$lib/server/push';
+import { requireUser } from '$lib/server/auth';
+import {
+  ValidationError,
+  buildFixturePlayerRows,
+  normalizeFixturePlayers,
+  parsePositiveInt,
+  pickWinnerOptionId,
+  uniqueByPlayerId,
+  type FixturePlayerInput
+} from '$lib/domain/fixture';
+
+type ConfirmBody = {
+  option_id?: number;
+  players?: unknown;
+};
 
 export const POST: RequestHandler = async ({ params, locals, request }) => {
+  await requireUser(locals);
   const supabase = locals.supabase;
-  const { user } = await locals.safeGetSession();
-  if (!user) throw error(401, "Unauthorized");
 
-  const poll_id = Number(params.poll_id);
-  if (!poll_id || Number.isNaN(poll_id)) throw error(400, "Invalid poll_id");
+  const poll_id = parsePositiveInt(params.poll_id);
+  if (!poll_id) throw error(400, 'poll_id non valido');
 
-  const body = (await (async () => {
-    try {
-      return await request.json();
-    } catch {
-      return {};
-    }
-  })()) as {
-    option_id?: number;
-    players?: Array<{
-      player_id: string;
-      team: "A" | "B" | "P";
-      is_goalkeeper?: boolean;
-    }>;
-  };
+  const body: ConfirmBody = await request.json().catch(() => ({}));
+
+  // Validazione completa PRIMA di qualsiasi scrittura.
+  let requestedPlayers: FixturePlayerInput[];
+  try {
+    requestedPlayers = normalizeFixturePlayers(body.players);
+  } catch (e) {
+    if (e instanceof ValidationError) throw error(400, e.message);
+    throw e;
+  }
+  const requestedOptionId =
+    body.option_id === undefined || body.option_id === null ? null : parsePositiveInt(body.option_id);
+  if (body.option_id != null && !requestedOptionId) throw error(400, 'option_id non valido');
 
   try {
+    const { data: poll, error: pollErr } = await supabase
+      .from('poll')
+      .select('poll_id')
+      .eq('poll_id', poll_id)
+      .maybeSingle();
+    if (pollErr) throw pollErr;
+    if (!poll) throw error(404, 'Sondaggio non trovato');
+
+    // L'opzione vincente viene calcolata al massimo una volta e solo se serve.
+    let winnerOptionId: number | null = requestedOptionId;
+    const resolveWinner = async (): Promise<number> => {
+      if (winnerOptionId) return winnerOptionId;
+      const [{ data: options, error: optErr }, { data: votes, error: vErr }] = await Promise.all([
+        supabase.from('poll_option').select('option_id, match_date, time_of_day').eq('poll_id', poll_id),
+        supabase.from('poll_vote').select('option_id, choice').eq('poll_id', poll_id).eq('choice', 'yes')
+      ]);
+      if (optErr) throw optErr;
+      if (vErr) throw vErr;
+      if (!options?.length) throw error(400, 'Il sondaggio non ha opzioni');
+      winnerOptionId = pickWinnerOptionId(options, votes ?? []);
+      if (!winnerOptionId) throw error(400, 'Impossibile determinare la data vincente');
+      return winnerOptionId;
+    };
+
+    // Riusa la convocazione esistente: un doppio clic non ne crea una seconda.
     const { data: fx, error: fxErr } = await supabase
-      .from("fixture")
-      .select("fixture_id, status")
-      .eq("poll_id", poll_id)
-      .order("created_at", { ascending: false })
+      .from('fixture')
+      .select('fixture_id, status')
+      .eq('poll_id', poll_id)
+      .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
     if (fxErr) throw fxErr;
 
-    let fixture_id = fx?.fixture_id;
+    let fixture_id: number | undefined = fx?.fixture_id;
     let created_fixture = false;
 
     if (!fixture_id) {
-      let winnerOptionId = body.option_id;
-      if (!winnerOptionId) {
-        const { data: options, error: optErr } = await supabase
-          .from("poll_option")
-          .select("option_id, match_date, time_of_day, luogo")
-          .eq("poll_id", poll_id);
-        if (optErr) throw optErr;
-        if (!options?.length) throw error(400, "No options for this poll");
-
-        const { data: votes, error: vErr } = await supabase
-          .from("poll_vote")
-          .select("option_id, choice")
-          .eq("poll_id", poll_id)
-          .eq("choice", "yes");
-        if (vErr) throw vErr;
-
-        const counts = new Map<number, number>();
-        for (const v of votes ?? [])
-          counts.set(v.option_id, (counts.get(v.option_id) ?? 0) + 1);
-        const ranked = options.slice().sort((a, b) => {
-          const ca = counts.get(a.option_id) ?? 0;
-          const cb = counts.get(b.option_id) ?? 0;
-          if (cb !== ca) return cb - ca;
-          const da = a.match_date ?? "";
-          const db = b.match_date ?? "";
-          if (da !== db) return da < db ? -1 : 1;
-          const ta = a.time_of_day ?? "";
-          const tb = b.time_of_day ?? "";
-          if (ta !== tb) return ta < tb ? -1 : 1;
-          return a.option_id - b.option_id;
-        });
-        winnerOptionId = ranked[0]?.option_id;
-        if (!winnerOptionId) throw error(400, "Cannot pick a winner");
-      }
-
+      const optionId = await resolveWinner();
       const { data: picked, error: pickErr } = await supabase
-        .from("poll_option")
-        .select("match_date, luogo, time_of_day")
-        .eq("poll_id", poll_id)
-        .eq("option_id", winnerOptionId!)
+        .from('poll_option')
+        .select('match_date, luogo, time_of_day')
+        .eq('poll_id', poll_id)
+        .eq('option_id', optionId)
         .maybeSingle();
-      if (pickErr || !picked) throw error(400, "Invalid option chosen");
+      if (pickErr) throw pickErr;
+      if (!picked) throw error(400, "L'opzione scelta non appartiene a questo sondaggio");
 
       const { data: created, error: insErr } = await supabase
-        .from("fixture")
+        .from('fixture')
         .insert({
           poll_id,
           match_date: picked.match_date,
           luogo: picked.luogo,
-          status: "confirmed",
-          locked_at: new Date().toISOString(),
+          time_of_day: picked.time_of_day,
+          status: 'confirmed',
+          locked_at: new Date().toISOString()
         })
-        .select("fixture_id")
+        .select('fixture_id')
         .single();
       if (insErr) throw insErr;
 
-      fixture_id = created.fixture_id;
+      fixture_id = created.fixture_id as number;
       created_fixture = true;
     }
 
-    let playersToPersist = Array.isArray(body.players) ? body.players : [];
-
+    let playersToPersist = requestedPlayers;
     if (playersToPersist.length === 0) {
-      let winnerOptionId = body.option_id;
-      if (!winnerOptionId) {
-        const { data: options, error: optErr } = await supabase
-          .from("poll_option")
-          .select("option_id, match_date, time_of_day, luogo")
-          .eq("poll_id", poll_id);
-        if (optErr) throw optErr;
-        if (!options?.length) throw error(400, "No options for this poll");
-
-        const { data: votes, error: vErr } = await supabase
-          .from("poll_vote")
-          .select("option_id, choice")
-          .eq("poll_id", poll_id)
-          .eq("choice", "yes");
-        if (vErr) throw vErr;
-
-        const counts = new Map<number, number>();
-        for (const v of votes ?? [])
-          counts.set(v.option_id, (counts.get(v.option_id) ?? 0) + 1);
-        const ranked = options.slice().sort((a, b) => {
-          const ca = counts.get(a.option_id) ?? 0;
-          const cb = counts.get(b.option_id) ?? 0;
-          if (cb !== ca) return cb - ca;
-          const da = a.match_date ?? "";
-          const db = b.match_date ?? "";
-          if (da !== db) return da < db ? -1 : 1;
-          const ta = a.time_of_day ?? "";
-          const tb = b.time_of_day ?? "";
-          if (ta !== tb) return ta < tb ? -1 : 1;
-          return a.option_id - b.option_id;
-        });
-        winnerOptionId = ranked[0]?.option_id;
-        if (!winnerOptionId) throw error(400, "Cannot pick a winner");
-      }
-
+      const optionId = await resolveWinner();
       const { data: voters, error: votersErr } = await supabase
-        .from("poll_vote")
-        .select("player_id, players!inner(name)")
-        .eq("poll_id", poll_id)
-        .eq("option_id", winnerOptionId)
-        .eq("choice", "yes");
+        .from('poll_vote')
+        .select('player_id, players!inner(name)')
+        .eq('poll_id', poll_id)
+        .eq('option_id', optionId)
+        .eq('choice', 'yes');
       if (votersErr) throw votersErr;
-
-      const seen = new Set<string>();
-      playersToPersist = (voters ?? [])
-        .map((row) => ({
-          player_id: row.player_id,
-          team: "P" as const,
-          is_goalkeeper: false,
+      playersToPersist = uniqueByPlayerId(
+        (voters ?? []).map((row) => ({
+          player_id: row.player_id as string,
+          team: 'P' as const,
+          is_goalkeeper: false
         }))
-        .filter((row) => {
-          if (seen.has(row.player_id)) return false;
-          seen.add(row.player_id);
-          return true;
-        });
+      );
     }
 
-    let notifyPlayerIds: string[] = [];
+    const rows = buildFixturePlayerRows(fixture_id, playersToPersist);
 
-    if (playersToPersist.length > 0) {
-      const map = new Map<
-        string,
-        {
-          fixture_id: number;
-          player_id: string;
-          team: "A" | "B" | "P";
-          is_goalkeeper: boolean;
-          gk_order?: number;
-        }
-      >();
-
-      for (const p of playersToPersist) {
-        map.set(p.player_id, {
-          fixture_id,
-          player_id: p.player_id,
-          team: p.team,
-          is_goalkeeper: !!p.is_goalkeeper,
-        });
-      }
-      const rows = Array.from(map.values());
-
-      const rowsA = rows.filter((r) => r.team === "A");
-      const rowsB = rows.filter((r) => r.team === "B");
-
-      shuffle(rowsA, mulberry32(fixture_id * 1337 + 65)).forEach(
-        (r, i) => (r.gk_order = i + 1)
-      );
-      shuffle(rowsB, mulberry32(fixture_id * 1337 + 66)).forEach(
-        (r, i) => (r.gk_order = i + 1)
-      );
-
+    if (rows.length > 0) {
       const { error: upErr } = await supabase
-        .from("fixture_player")
-        .upsert(rows, { onConflict: "fixture_id,player_id" });
+        .from('fixture_player')
+        .upsert(rows, { onConflict: 'fixture_id,player_id' });
       if (upErr) {
-        if (created_fixture)
-          await supabase.from("fixture").delete().eq("fixture_id", fixture_id);
+        // Compensazione: non lasciare una convocazione appena creata senza giocatori.
+        if (created_fixture) await supabase.from('fixture').delete().eq('fixture_id', fixture_id);
         throw upErr;
       }
-
-      notifyPlayerIds = [...rowsA, ...rowsB].map((r) => r.player_id);
     }
 
-    const { error: updErr } = await supabase
-      .from("fixture")
-      .update({ status: "confirmed", locked_at: new Date().toISOString() })
-      .eq("fixture_id", fixture_id);
-    if (updErr) throw updErr;
+    if (!created_fixture) {
+      const { error: updErr } = await supabase
+        .from('fixture')
+        .update({ status: 'confirmed', locked_at: new Date().toISOString() })
+        .eq('fixture_id', fixture_id);
+      if (updErr) throw updErr;
+    }
 
-    await supabase
-      .from("poll")
-      .update({ status: "closed" })
-      .eq("poll_id", poll_id);
+    const { error: closeErr } = await supabase
+      .from('poll')
+      .update({ status: 'closed' })
+      .eq('poll_id', poll_id);
+    if (closeErr) console.error('confirm fixture: chiusura sondaggio fallita', closeErr);
 
+    // Le notifiche non devono mai far fallire una conferma già salvata.
+    const notifyPlayerIds = rows.filter((r) => r.team === 'A' || r.team === 'B').map((r) => r.player_id);
     if (notifyPlayerIds.length) {
       try {
         const { data: fixtureInfo } = await supabase
-          .from("fixture")
-          .select("match_date, luogo")
-          .eq("fixture_id", fixture_id)
+          .from('fixture')
+          .select('match_date, luogo')
+          .eq('fixture_id', fixture_id)
           .maybeSingle();
         const dateLabel = formatMatchDate(fixtureInfo?.match_date ?? null);
-        const luogo = fixtureInfo?.luogo ? ` @ ${fixtureInfo.luogo}` : "";
+        const luogo = fixtureInfo?.luogo ? ` @ ${fixtureInfo.luogo}` : '';
         await sendPushToPlayers(notifyPlayerIds, {
-          title: "Squadre pubblicate!",
+          title: 'Squadre pubblicate!',
           body: `${dateLabel}${luogo} — controlla la tua squadra`,
-          url: "/planned",
+          url: '/planned'
         });
       } catch (pushErr) {
-        console.error("push notify-teams error", pushErr);
+        console.error('push notify-teams error', pushErr);
       }
     }
 
     return json({ ok: true, fixture_id });
-  } catch (e: any) {
-    console.error("confirm fixture error:", e?.message ?? e);
-    throw error(500, e?.message ?? "Internal error");
+  } catch (e: unknown) {
+    // Prima gli errori 4xx venivano trasformati in 500: ora li lasciamo passare.
+    if (isHttpError(e)) throw e;
+    const message = e instanceof Error ? e.message : (e as { message?: string })?.message;
+    console.error('confirm fixture error:', message ?? e);
+    throw error(500, 'Errore durante la conferma della convocazione');
   }
 };
