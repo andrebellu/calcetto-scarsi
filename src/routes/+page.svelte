@@ -1,5 +1,6 @@
 <script lang="ts">
     import HomeCard from "$lib/HomeCard/HomeCard.svelte";
+    import NextActionCard from "$lib/Home/NextActionCard.svelte";
     import { homeCards } from "$lib/homeCardsData";
     import { onMount } from "svelte";
     export let data;
@@ -93,6 +94,9 @@
             <span class="text-primary-500">scarsi</span>
         </h1>
 
+        <!-- Cosa devo fare adesso -->
+        <NextActionCard status={data.home} isAdmin={data.isAuthenticated} />
+
         <!-- Stats strip -->
         <div class="grid grid-cols-3 gap-2.5 mb-6">
             <div
@@ -134,80 +138,6 @@
                 >
             </div>
         </div>
-
-        <!-- Next match / Poll banner -->
-        {#if data.dataDecisa && data.prossimaPartita}
-            <div
-                class="w-full bg-surface-800/40 border border-primary-600/60 rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
-            >
-                <div class="flex items-center gap-4">
-                    <div
-                        class="w-11 h-11 bg-primary-900/50 rounded-xl flex items-center justify-center flex-shrink-0"
-                    >
-                        <span class="material-symbols-outlined text-primary-400"
-                            >stadium</span
-                        >
-                    </div>
-                    <div>
-                        <p class="font-semibold text-surface-100">
-                            {data.prossimaPartita.luogo}
-                        </p>
-                        <p class="text-sm text-surface-400">
-                            {new Date(
-                                data.prossimaPartita.data,
-                            ).toLocaleDateString("it-IT", {
-                                weekday: "long",
-                                day: "2-digit",
-                                month: "long",
-                            })} · orario da concordare su Whatsapp
-                        </p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    {#if data.isAuthenticated}
-                        <a
-                            href="/poll"
-                            class="text-sm text-surface-400 border border-surface-600 rounded-lg px-4 py-2 hover:border-surface-400 transition"
-                        >
-                            Crea sondaggio →
-                        </a>
-                    {/if}
-                    <a
-                        href="/planned"
-                        class="text-sm font-medium bg-primary-600 hover:bg-primary-500 text-white rounded-lg px-4 py-2 transition"
-                    >
-                        Convocazioni →
-                    </a>
-                </div>
-            </div>
-        {:else}
-            <div
-                class="w-full bg-surface-800/40 border border-secondary-600/60 rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
-            >
-                <div class="flex items-center gap-4">
-                    <div
-                        class="w-11 h-11 bg-secondary-900/50 rounded-xl flex items-center justify-center flex-shrink-0"
-                    >
-                        <span
-                            class="material-symbols-outlined text-secondary-400"
-                            >poll</span
-                        >
-                    </div>
-                    <div>
-                        <p class="font-semibold text-surface-100">Sondaggio</p>
-                        <p class="text-sm text-surface-400">
-                            Vota per la prossima partita
-                        </p>
-                    </div>
-                </div>
-                <a
-                    href="/poll"
-                    class="text-sm font-medium bg-secondary-600 hover:bg-secondary-500 text-white rounded-lg px-4 py-2 transition flex-shrink-0"
-                >
-                    Vai al sondaggio →
-                </a>
-            </div>
-        {/if}
 
         <!-- Nav cards bento grid -->
         <div class="grid grid-cols-2 gap-3 w-full">
