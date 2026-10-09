@@ -6,6 +6,7 @@
         { href: "/players", label: "Giocatori", icon: "group" },
         { href: "/stats", label: "Statistiche", icon: "bar_chart" },
         { href: "/poll", label: "Sondaggi", icon: "poll" },
+        { href: "/planned", label: "Convocazioni", icon: "event_available" },
     ];
 
     $: activeLink = $page.url.pathname;

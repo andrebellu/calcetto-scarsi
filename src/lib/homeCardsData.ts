@@ -23,5 +23,5 @@ export const homeCards = [
     color: "secondary",
     size: "sm",
   },
-];
+] as const;
 
